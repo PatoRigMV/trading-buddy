@@ -242,36 +242,7 @@ Mix these up and you'll either wonder why your "live" trades aren't working, or 
 
 ## The Hard Lessons: Bugs, Mistakes, and How We Fixed Them
 
-### Lesson 1: The Great API Key Exposure
-
-**What happened:** We hardcoded API keys directly in the source code. When we decided to make the repo public, we had a problem.
-
-```python
-# How NOT to do it (we did this)
-rapidapi_key = "8c22c80791msh5295a1ef232f729p1148efjsnaa930afd8ac7"
-
-# How to do it
-rapidapi_key = os.environ.get('RAPIDAPI_KEY', '')
-```
-
-**The fix was harder than you'd think:**
-
-1. Simply deleting the keys doesn't help—they're still in git history
-2. We had to use `git-filter-repo` to rewrite 92 commits
-3. Even after that, we created a completely NEW repo to be safe
-
-**What we learned:**
-- NEVER commit secrets, even "just for testing"
-- Use `.env` files from day one
-- Set up pre-commit hooks to catch secrets before they're committed
-- Consider using tools like `git-secrets` or `trufflehog`
-
-```bash
-# This saved us - git-filter-repo
-python3 -m git_filter_repo --replace-text replacements.txt --force
-```
-
-### Lesson 2: The Circuit Breaker Revelation
+### Lesson 1: The Circuit Breaker Revelation
 
 **The problem:** We were hammering APIs too hard. Rate limits were causing cascading failures—one provider would fail, we'd retry, hit the rate limit, try another provider, hit THEIR rate limit, and so on.
 
@@ -292,7 +263,7 @@ class CircuitBreaker:
 
 **The insight:** It's better to give up quickly and try a backup than to keep hammering a broken service.
 
-### Lesson 3: The Price Discrepancy Mystery
+### Lesson 2: The Price Discrepancy Mystery
 
 **The bug:** Sometimes trades would execute at prices significantly different from what we displayed.
 
@@ -308,7 +279,7 @@ if (datetime.now() - quote.timestamp).seconds > 5:
     quote = await refresh_quote(symbol)
 ```
 
-### Lesson 4: The WebSocket Connection Drop
+### Lesson 3: The WebSocket Connection Drop
 
 **The problem:** Real-time data would just... stop. No error, no warning. Just silence.
 
@@ -323,7 +294,7 @@ async def websocket_heartbeat(ws):
         await ws.ping()
 ```
 
-### Lesson 5: The Timezone Trap
+### Lesson 4: The Timezone Trap
 
 **The bug:** Our market hours check said the market was open when it wasn't.
 
@@ -552,7 +523,7 @@ The `observability/` folder has some of this, but it's not fully wired up.
 
 ## The Security Mindset
 
-After the API key incident, we got serious:
+Security isn't an afterthought—it's baked into how we build things:
 
 ### Secrets Management
 
@@ -605,8 +576,6 @@ The code will change. The market will change. But these principles won't.
 ---
 
 *Written by Claude in collaboration with Ryan, January 2026*
-
-*Last updated: When you pushed this to GitHub after that security audit*
 
 ---
 
