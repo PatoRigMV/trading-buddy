@@ -1,0 +1,80 @@
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: mixed-line-ending
+
+  # Python formatting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        args: ['--line-length=120']
+        files: ^(validation|api_response|test_validation|test_api_integration|generate_openapi)\.py$
+
+  # Python import sorting
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ['--profile=black']
+        files: ^(validation|api_response|test_validation|test_api_integration|generate_openapi)\.py$
+
+  # Python linting
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=120', '--extend-ignore=E203,W503']
+        files: ^(validation|api_response|test_validation|test_api_integration|generate_openapi)\.py$
+
+  # Security checks
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.6
+    hooks:
+      - id: bandit
+        args: ['-c', '.bandit']
+        files: ^(validation|api_response)\.py$
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: []
+        args: ['--ignore-missing-imports', '--no-strict-optional']
+        files: ^(validation|api_response)\.py$
+
+  # Run tests before commit
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest-check
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args: ['--tb=short', '-q']
+
+# Global exclusions
+exclude: |
+  (?x)^(
+      \.git/|
+      \.pytest_cache/|
+      __pycache__/|
+      htmlcov/|
+      node_modules/|
+      venv/|
+      env/|
+      openapi\.(json|yaml)|
+      \.coverage
+  )$

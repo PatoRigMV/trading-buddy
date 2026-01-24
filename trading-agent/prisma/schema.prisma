@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./trading-agent.db"
+}
+
+model Decision {
+  id          String   @id @default(cuid())
+  symbol      String
+  timestamp   DateTime
+  state       String
+  decision    String   // 'buy', 'sell', 'hold'
+  reason      String
+  confidence  String   // Store confidence scores as JSON string
+  signals     String   // Store technical signals as JSON string
+  orderId     String?
+  price       Float?
+  quantity    Int?
+  createdAt   DateTime @default(now())
+
+  @@map("decisions")
+}
+
+model Trade {
+  id             String    @id @default(cuid())
+  symbol         String
+  side           String    // 'buy' or 'sell'
+  quantity       Int
+  entryPrice     Float
+  exitPrice      Float?
+  entryDate      DateTime
+  exitDate       DateTime?
+  pnl            Float?
+  pnlPercent     Float?
+  status         String    // 'open', 'closed'
+  entryOrderId   String?
+  exitOrderId    String?
+  stopLoss       Float?
+  targetPrice    Float?
+  exitReason     String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("trades")
+}
+
+model Order {
+  id           String   @id @default(cuid())
+  brokerOrderId String  @unique
+  symbol       String
+  side         String   // 'buy' or 'sell'
+  quantity     Int
+  orderType    String   // 'market', 'limit'
+  status       String
+  limitPrice   Float?
+  stopPrice    Float?
+  filledQty    Int      @default(0)
+  avgFillPrice Float?
+  submittedAt  DateTime
+  filledAt     DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@map("orders")
+}
+
+model Portfolio {
+  id            String   @id @default(cuid())
+  date          DateTime @unique
+  totalValue    Float
+  cash          Float
+  equity        Float
+  unrealizedPnL Float
+  realizedPnL   Float
+  dayPnL        Float
+  positions     String   // Store positions as JSON string
+  createdAt     DateTime @default(now())
+
+  @@map("portfolio_snapshots")
+}
+
+model StateTransition {
+  id          String   @id @default(cuid())
+  symbol      String
+  fromState   String
+  toState     String
+  reason      String
+  timestamp   DateTime
+  createdAt   DateTime @default(now())
+
+  @@map("state_transitions")
+}
+
+model Performance {
+  id              String   @id @default(cuid())
+  date            DateTime @unique
+  totalReturn     Float
+  sharpeRatio     Float?
+  maxDrawdown     Float?
+  winRate         Float?
+  totalTrades     Int      @default(0)
+  winningTrades   Int      @default(0)
+  losingTrades    Int      @default(0)
+  avgWin          Float?
+  avgLoss         Float?
+  profitFactor    Float?
+  createdAt       DateTime @default(now())
+
+  @@map("performance_metrics")
+}
+
+model WatchlistEntry {
+  id                String   @id @default(cuid())
+  symbol            String
+  submitter         String   // 'user' or 'agent-{id}' or 'system'
+  submitterType     String   // 'user', 'agent', 'system'
+  reason            String   // Why it was added to watchlist
+  entryType         String   // 'new_opportunity', 're_engagement', 'user_manual', 'technical_breakout'
+  targetEntry       Float?   // Target entry price
+  currentPrice      Float?   // Price when added
+  confidence        Float?   // Confidence score (0-1)
+  signals           String?  // Technical signals as JSON
+  reEngagementScore Float?   // Re-engagement scoring for closed positions
+  priority          Int      @default(0) // Priority ranking
+  status            String   @default("active") // 'active', 'triggered', 'expired', 'removed'
+  notes             String?  // Additional notes
+  expiresAt         DateTime? // Optional expiration
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([symbol, submitter])
+  @@map("watchlist_entries")
+}

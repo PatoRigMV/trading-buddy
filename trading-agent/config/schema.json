@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Trading Strategy Configuration",
+  "type": "object",
+  "required": ["symbols", "interval", "mode", "risk", "thresholds"],
+  "properties": {
+    "symbols": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{1,5}$"
+      },
+      "minItems": 1,
+      "maxItems": 20,
+      "description": "Stock symbols to trade"
+    },
+    "interval": {
+      "type": "string",
+      "enum": ["1min", "5min", "15min", "30min", "1hour", "1day"],
+      "description": "Trading timeframe"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["paper", "live", "alpaca", "yahoo"],
+      "description": "Trading and data mode"
+    },
+    "equity_start": {
+      "type": "number",
+      "minimum": 1000,
+      "maximum": 10000000,
+      "description": "Starting equity amount"
+    },
+    "risk": {
+      "type": "object",
+      "required": ["per_trade", "max_daily_loss", "max_positions", "max_exposure_symbol"],
+      "properties": {
+        "per_trade": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 0.1,
+          "description": "Maximum risk per trade as decimal (e.g., 0.01 = 1%)"
+        },
+        "max_daily_loss": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.2,
+          "description": "Maximum daily loss as decimal (e.g., 0.03 = 3%)"
+        },
+        "max_positions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum concurrent positions"
+        },
+        "max_exposure_symbol": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 0.5,
+          "description": "Maximum exposure per symbol as decimal (e.g., 0.10 = 10%)"
+        }
+      }
+    },
+    "thresholds": {
+      "type": "object",
+      "required": ["buy_enter", "sell_exit"],
+      "properties": {
+        "buy_enter": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1.0,
+          "description": "Minimum confidence threshold to enter buy position"
+        },
+        "sell_exit": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 1.0,
+          "description": "Minimum confidence threshold to exit position"
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info",
+          "description": "Logging level"
+        }
+      }
+    }
+  }
+}

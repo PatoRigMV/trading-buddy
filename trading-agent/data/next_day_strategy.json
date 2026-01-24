@@ -1,0 +1,72 @@
+{
+  "generated_at": "2025-09-30T07:28:50.389Z",
+  "valid_until": "2025-10-01T07:28:50.389Z",
+  "primary_watchlist": [
+    {
+      "symbol": "AAPL",
+      "score": 0.85,
+      "reasons": [
+        "Bullish flag pattern",
+        "Strong volume",
+        "Sector rotation into tech"
+      ],
+      "strategy": "breakout",
+      "risk_level": "low",
+      "timeframe": "3d"
+    },
+    {
+      "symbol": "NVDA",
+      "score": 0.78,
+      "reasons": [
+        "RSI oversold bounce",
+        "Support at 200MA",
+        "AI sector strength"
+      ],
+      "strategy": "mean_reversion",
+      "risk_level": "medium",
+      "timeframe": "1d"
+    }
+  ],
+  "sector_outlook": {
+    "Technology": "bullish",
+    "Healthcare": "neutral",
+    "Financials": "bearish",
+    "Consumer Discretionary": "bullish",
+    "Energy": "neutral",
+    "Real Estate": "bearish"
+  },
+  "market_regime": "trending",
+  "recommended_position_sizes": {
+    "AAPL": 0.03,
+    "NVDA": 0.025,
+    "TSLA": 0.02
+  },
+  "key_levels": {
+    "AAPL": {
+      "support": 170,
+      "resistance": 180
+    },
+    "NVDA": {
+      "support": 400,
+      "resistance": 450
+    },
+    "TSLA": {
+      "support": 240,
+      "resistance": 260
+    }
+  },
+  "options_opportunities": [
+    {
+      "symbol": "TSLA",
+      "strategy": "Iron Condor",
+      "probability": 0.65,
+      "max_risk": 500
+    },
+    {
+      "symbol": "SPY",
+      "strategy": "Covered Call",
+      "probability": 0.72,
+      "max_risk": 1000
+    }
+  ]
+}

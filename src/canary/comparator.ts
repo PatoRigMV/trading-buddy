@@ -1,0 +1,3 @@
+export interface LiveFill { trace_id:string; symbol:string; ts:number; side:'buy'|'sell'; qty:number; price:number; }
+export interface PaperIntent { trace_id:string; symbol:string; ts:number; side:'buy'|'sell'; qty:number; mid:number; planned_price:number; }
+export function diff(live:LiveFill[], paper:PaperIntent[]){ const byTrace = new Map(live.map(x=>[x.trace_id,x])); const rows:any[]=[]; for(const p of paper){ const l = byTrace.get(p.trace_id); if(!l) { rows.push({ trace_id:p.trace_id, symbol:p.symbol, status:'missing_live' }); continue; } const diff_bps = (l.price - p.planned_price)/p.planned_price*10000; rows.push({ trace_id:p.trace_id, symbol:p.symbol, status:'ok', diff_bps, live:l.price, plan:p.planned_price }); } return rows; }

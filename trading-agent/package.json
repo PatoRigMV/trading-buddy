@@ -1,0 +1,25 @@
+{
+  "name": "trading-agent",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "ts-node src/cli/runAgent.ts",
+    "agent": "ts-node src/cli/runAgent.ts",
+    "backtest": "ts-node src/cli/backtest.ts",
+    "api": "ts-node src/api/server.ts",
+    "test": "vitest run",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.15.0",
+    "dotenv": "^16.4.0",
+    "fastify": "^4.28.0",
+    "yaml": "^2.3.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prisma": "^5.15.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0"
+  }
+}

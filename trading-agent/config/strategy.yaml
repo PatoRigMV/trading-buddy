@@ -1,0 +1,394 @@
+symbols:
+  mega_cap:
+  - AAPL
+  - MSFT
+  - GOOGL
+  - AMZN
+  - NVDA
+  - BRK.B
+  - TSLA
+  - META
+  - V
+  - JNJ
+  large_cap_value:
+  - JPM
+  - BAC
+  - WMT
+  - PG
+  - KO
+  - PEP
+  - HD
+  - UNH
+  - CVX
+  - XOM
+  growth_leaders:
+  - NVDA
+  - AMD
+  - PLTR
+  - SNOW
+  - NET
+  - CRWD
+  - ZS
+  - OKTA
+  - DDOG
+  - MDB
+  - CRM
+  - NOW
+  - WDAY
+  - TEAM
+  - ZM
+  - DOCN
+  - BILL
+  - S
+  - ESTC
+  mid_cap_gems:
+  - RBLX
+  - PATH
+  - DKNG
+  - OPEN
+  - ABNB
+  - UBER
+  - LYFT
+  - DASH
+  - COIN
+  - HOOD
+  - BLOCK
+  - PYPL
+  - SHOP
+  - SPOT
+  - TTD
+  - ROKU
+  - PINS
+  - SNAP
+  small_cap_innovators:
+  - AI
+  - SMCI
+  - IONQ
+  - BBAI
+  - RGTI
+  - QUBT
+  - AVAV
+  - KTOS
+  - IRDM
+  - MAXR
+  - SPIR
+  - ASTR
+  - RKLB
+  - LUNR
+  - ASTS
+  biotech_emerging:
+  - MRNA
+  - BNTX
+  - NVAX
+  - SGEN
+  - BMRN
+  - VRTX
+  - ILMN
+  - REGN
+  - GILD
+  - BIIB
+  - AMGN
+  - CELG
+  - INCY
+  - ALNY
+  - RARE
+  fintech_disruptors:
+  - BLOCK
+  - PYPL
+  - HOOD
+  - AFRM
+  - SOFI
+  - COIN
+  - UPST
+  - LC
+  - NU
+  - PAGS
+  - STNE
+  - MELI
+  - SE
+  clean_energy:
+  - TSLA
+  - ENPH
+  - SEDG
+  - RUN
+  - SPWR
+  - FSLR
+  - PLUG
+  - BE
+  - NEE
+  - BEP
+  - AES
+  - EIX
+  - DUK
+  cybersecurity:
+  - CRWD
+  - ZS
+  - NET
+  - OKTA
+  - PANW
+  - FTNT
+  - S
+  - RPD
+  - CYBR
+  - FEYE
+  - VRNS
+  - TENB
+  - QLYS
+  robotics_ai:
+  - NVDA
+  - AMD
+  - AI
+  - PLTR
+  - PATH
+  - SMCI
+  - IONQ
+  - GOOGL
+  - MSFT
+  - AVAV
+  - KTOS
+  - IRBT
+  - ROK
+  - ABB
+  international_growth:
+  - TSM
+  - ASML
+  - NVO
+  - TM
+  - SONY
+  - SAP
+  - SHOP
+  - SE
+  - MELI
+  - BABA
+  - JD
+  - PDD
+  - BIDU
+  - NIO
+  - XPEV
+  - LI
+  value_growth_hybrid:
+  - BRK.B
+  - MA
+  - V
+  - COST
+  - LOW
+  - TGT
+  - WMT
+  - DIS
+  - NFLX
+  - ADBE
+  - CRM
+  - NOW
+  - INTU
+  - ORCL
+  - CSCO
+  space_economy:
+  - RKLB
+  - ASTR
+  - SPIR
+  - LUNR
+  - ASTS
+  - MAXR
+  - LMT
+  - BA
+  - RTX
+  quantum_computing:
+  - IONQ
+  - RGTI
+  - QUBT
+  - IBM
+  - GOOGL
+  - MSFT
+  - NVDA
+  gaming_metaverse:
+  - RBLX
+  - U
+  - EA
+  - ATVI
+  - TTWO
+  - NVDA
+  - AMD
+  - META
+active_symbols:
+- AAPL
+- MSFT
+- NVDA
+- AMZN
+- GOOGL
+- TSLA
+- META
+- BRK.B
+- V
+- JNJ
+- JPM
+- BAC
+- WMT
+- HD
+- PG
+- KO
+- UNH
+- CVX
+- XOM
+- PEP
+- AMD
+- INTC
+- NFLX
+- CRM
+- NOW
+- ADBE
+- ORCL
+- CSCO
+- PLTR
+- SNOW
+- NET
+- CRWD
+- ZS
+- OKTA
+- DDOG
+- MRNA
+- BNTX
+- VRTX
+- ILMN
+- REGN
+- GILD
+- BIIB
+- AMGN
+- BLOCK
+- PYPL
+- MA
+- COIN
+- SOFI
+- COST
+- LOW
+- TGT
+- DIS
+- UBER
+- NEE
+- AES
+- ENPH
+- TSM
+- ASML
+- SHOP
+- RBLX
+- HOOD
+# Additional symbols from category lists
+- PATH
+- DKNG
+- OPEN
+- ABNB
+- LYFT
+- DASH
+- AI
+- SMCI
+- IONQ
+- BBAI
+- RGTI
+- QUBT
+- AVAV
+- KTOS
+- IRDM
+- MAXR
+- SPIR
+- ASTR
+- RKLB
+- LUNR
+- ASTS
+- NVAX
+- SGEN
+- BMRN
+- CELG
+- INCY
+- ALNY
+- RARE
+- AFRM
+- UPST
+- LC
+- NU
+- PAGS
+- STNE
+- MELI
+- SE
+- SEDG
+- RUN
+- SPWR
+- FSLR
+- PLUG
+- BE
+- BEP
+- EIX
+- DUK
+- PANW
+- FTNT
+- S
+- RPD
+- CYBR
+- FEYE
+- VRNS
+- TENB
+- QLYS
+- IRBT
+- ROK
+- ABB
+- NVO
+- TM
+- SONY
+- SAP
+- BABA
+- JD
+- PDD
+- BIDU
+- NIO
+- XPEV
+- LI
+- INTU
+- U
+- EA
+- ATVI
+- TTWO
+- PINS
+- SNAP
+- TTD
+- ROKU
+- SPOT
+interval: 1m
+mode: alpaca           # Use Alpaca market data API
+equity_start: 100000
+trading:
+  enabled: true        # Enable actual trading
+  paper_mode: true     # Use paper trading for safety
+  enable_buy: true     # Allow buy orders
+  enable_sell: true    # Allow sell orders
+  min_trade_size: 1    # Minimum shares per trade
+analysis:
+  check_interval: 10s
+  market_data_timeout: 30s
+  enable_realtime: true
+risk:
+  per_trade: 0.02
+  max_daily_loss: 0.05
+  max_positions: 100
+  max_exposure_symbol: 0.1
+  max_sector_exposure: 0.3
+  allow_pyramiding: true
+  max_pyramid_levels: 3
+  pyramid_size_multiplier: 0.5
+thresholds:
+  buy_enter: 0.4      # 40% confidence for testing - temporarily lowered
+  sell_exit: 0.5      # 50% confidence to exit positions - temporarily lowered
+category_risk:
+  mega_cap: 0.06
+  growth_leaders: 0.05
+  healthcare_biotech: 0.04
+  financial_services: 0.05
+  consumer_retail: 0.05
+  energy_materials: 0.04
+  industrial_defense: 0.04
+  semiconductors: 0.04
+  international: 0.03
+  emerging_specialty: 0.03
+monitoring:
+  log_decisions: true
+  log_positions: true
+  status_interval: 30s
+logging:
+  level: info

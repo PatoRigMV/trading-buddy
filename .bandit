@@ -1,0 +1,15 @@
+exclude_dirs:
+  - /tests/
+  - __pycache__
+  - .pytest_cache
+  - htmlcov
+  - venv
+  - env
+  - node_modules
+
+tests:
+  - B201
+  - B301
+
+skips:
+  - B101

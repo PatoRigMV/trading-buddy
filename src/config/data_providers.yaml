@@ -1,0 +1,46 @@
+data_providers:
+  prices:
+    order: [polygon_ws, tiingo_iex, finnhub_rest, twelve_data_rapidapi, fmp_rapidapi, yahoo_finance]
+    validation:
+      floor_bps: 5
+      spread_multiplier: 2.0
+      cap_bps: 15
+      min_quorum: 2
+    freshness_ms:
+      quotes: 2000
+      bars_1m: 60000
+  corp_actions:
+    order: [polygon, fmp_rapidapi, tiingo]
+  fundamentals:
+    order: [ycharts, fmp_rapidapi, tiingo, alpha_vantage, yahoo_finance]
+  news:
+    order: [benzinga, tiingo_news, newsapi]
+  sentiment:
+    order: [tiingo_news_nlp, stocktwits, reddit]
+  macro:
+    order: [ycharts, fred]
+rate_limits:
+  polygon_ws: { strategy: ws_stream }
+  finnhub_rest: { rpm: 150 }
+  fmp_rapidapi: { rpm: 60 }
+  twelve_data_rapidapi: { rpm: 60 }
+execution:
+  min_band_bps: 5
+  band_spread_multiplier: 1.5
+  band_cap_bps: 25
+  open_close_auction_entries: false
+  participation_target: 0.05
+  adv_slice_threshold: 0.01
+  twap_slice_secs: 20
+execution_guards:
+  respect_luld: true
+  block_on_halt: true
+  max_spread_bps: 25
+calendar:
+  primary: polygon
+  fallback: nasdaq
+  polygon_api_key_env: POLYGON_API_KEY
+  cache_ttl_ms: 60000
+  tz: America/New_York
+events:
+  block_earnings_window_days: 3

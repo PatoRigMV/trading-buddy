@@ -1,0 +1,207 @@
+{
+  "trading_assistant_spec": {
+    "meta": {
+      "goal": "Web-based trading assistant for portfolio growth",
+      "deployment_phases": [
+        "Paper trading with broker/testnet API"
+      ]
+    },
+    "governance": {
+      "autonomy_levels": {
+        "proposal": "LLM may propose trades with structured rationale",
+        "approval": "Human required for execution during pilot phase"
+      },
+      "logging": [
+        "All trade proposals logged with rationale, risk metrics, and compliance checks"
+      ],
+      "refusal_protocols": [
+        "If conviction < threshold (e.g., <60%)",
+        "If risk budget exceeded"
+      ]
+    },
+    "risk_management": {
+      "position_sizing": {
+        "max_risk_per_trade": 0.0075,
+        "methods": [
+          "Kelly Criterion",
+          "Fixed Fractional"
+        ],
+        "stop_loss": "Always defined pre-trade"
+      },
+      "portfolio_exposure": {
+        "max_single_security": 0.05,
+        "max_asset_class": 0.2,
+        "diversification": "Across sectors, geographies, factors"
+      },
+      "monitoring": {
+        "metrics": [
+          "Sharpe",
+          "Sortino",
+          "Max Drawdown"
+        ],
+        "circuit_breakers": {
+          "portfolio_loss": -0.1,
+          "single_day_loss": -0.03
+        },
+        "stress_tests": [
+          "2008 crisis",
+          "COVID crash"
+        ]
+      }
+    },
+    "trade_execution": {
+      "order_management": {
+        "order_types": [
+          "Limit",
+          "TWAP"
+        ],
+        "avoid_periods": [
+          "Market open/close"
+        ],
+        "slippage_modeling": true
+      },
+      "entry_exit": {
+        "entry_signals": [
+          "Technical",
+          "Fundamental"
+        ],
+        "exit_rules": {
+          "profit_target": "2% target",
+          "stop_loss": "1% risk",
+          "trailing_stop": "ATR-based"
+        },
+        "scaling": [
+          "Scale-in for conviction builds"
+        ]
+      },
+      "transaction_costs": {
+        "factor_costs": true,
+        "tax_considerations": true,
+        "turnover_limits": 0.5
+      }
+    },
+    "portfolio_management": {
+      "allocation": {
+        "asset_classes": [
+          "Equities",
+          "Fixed Income"
+        ],
+        "rebalancing": "Quarterly or when drift > 5%",
+        "geographic_diversification": true,
+        "sector_limit": 0.15
+      },
+      "temporal_diversification": {
+        "dollar_cost_averaging": true,
+        "multiple_time_horizons": [
+          "Short-term tactical",
+          "Long-term strategic"
+        ]
+      }
+    },
+    "analysis_framework": {
+      "technical": {
+        "tools": [
+          "Moving Averages",
+          "RSI",
+          "MACD"
+        ],
+        "multi_timeframe": [
+          "Daily",
+          "Weekly"
+        ]
+      },
+      "fundamental": {
+        "metrics": [
+          "Revenue growth",
+          "Profitability",
+          "Valuations (P/E, EV/EBITDA)"
+        ],
+        "governance": "Evaluate management quality",
+        "macro": "Incorporate industry & economic factors"
+      },
+      "quantitative": {
+        "models": [
+          "Factor models",
+          "ML pattern recognition"
+        ],
+        "validation": "Walk-forward & bootstrap testing"
+      }
+    },
+    "real_time_reactions": {
+      "news_processing": {
+        "sources": [
+          "Bloomberg",
+          "Reuters"
+        ],
+        "filters": [
+          "Relevance",
+          "Credibility"
+        ],
+        "sentiment_analysis": true
+      },
+      "event_driven": {
+        "protocols": {
+          "earnings": "Rapid reassessment of positions",
+          "central_bank": "Pause discretionary trades \u00b11hr around announcement",
+          "geopolitics": "Scenario analysis before execution"
+        }
+      },
+      "volatility_management": {
+        "metrics": [
+          "VIX",
+          "IV rank"
+        ],
+        "adjust_position_size": true,
+        "hedging": [
+          "Options strategies"
+        ]
+      }
+    },
+    "compliance_ethics": {
+      "regulatory": {
+        "record_keeping": true,
+        "insider_trading_protocols": true,
+        "reporting_thresholds": true
+      },
+      "ethics": {
+        "no_market_manipulation": true,
+        "transparency": true,
+        "ESG_considerations": true
+      },
+      "disclosures": {
+        "client_risk_disclosures": true,
+        "decision_documentation": true,
+        "suitability_assessment": true
+      }
+    },
+    "continuous_learning": {
+      "performance_analysis": {
+        "metrics": [
+          "Returns",
+          "Volatility",
+          "Sharpe",
+          "Max Drawdown"
+        ],
+        "attribution": [
+          "By asset class",
+          "By sector"
+        ]
+      },
+      "strategy_evolution": {
+        "model_updates": "Quarterly review or regime shift",
+        "backtesting": "Rolling 10-year historical data",
+        "forward_testing": true
+      },
+      "regime_detection": {
+        "regimes": [
+          "Bull",
+          "Bear",
+          "Sideways",
+          "Volatility spike"
+        ],
+        "adjustments": "Adaptive risk & position sizing per regime",
+        "ensemble_methods": true
+      }
+    }
+  }
+}

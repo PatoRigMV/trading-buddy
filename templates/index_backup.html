@@ -1,0 +1,2681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Trading Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        /* Ensure smooth scrolling behavior and performance */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            scroll-behavior: smooth;
+            overflow-x: hidden; /* Prevent horizontal scroll only */
+        }
+
+        /* Optimize rendering for better scroll performance */
+        .real-time-prices-section,
+        .stock-grid,
+        .sector-card {
+            will-change: transform;
+            transform: translateZ(0); /* Force GPU acceleration */
+        }
+
+        /* Additional optimizations for loading performance */
+        #pricesLoadingIndicator {
+            will-change: transform, opacity;
+            transform: translateZ(0);
+        }
+
+        .progress-bar {
+            will-change: width;
+            transform: translateZ(0);
+        }
+
+        .stock-item {
+            will-change: auto; /* Don't over-optimize individual items */
+        }
+        .dashboard-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-running { background-color: #28a745; }
+        .status-stopped { background-color: #dc3545; }
+        .status-unknown { background-color: #ffc107; }
+
+        .metric-card {
+            text-align: center;
+            padding: 20px;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .proposal-card {
+            border-left: 4px solid #007bff;
+            margin-bottom: 15px;
+        }
+        .proposal-card.buy { border-left-color: #28a745; }
+        .proposal-card.sell { border-left-color: #dc3545; }
+
+        .nav-tabs .nav-link.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .btn-action {
+            margin: 5px;
+        }
+
+        .real-time-updates {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        /* Desktop viewport: extend height for better visibility */
+        @media (min-width: 768px) {
+            .real-time-updates {
+                max-height: 500px;
+            }
+        }
+
+        .update-item {
+            padding: 8px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.9rem;
+        }
+
+        .update-item:last-child {
+            border-bottom: none;
+        }
+
+        .performance-positive { color: #28a745; }
+        .performance-negative { color: #dc3545; }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Autonomous Agent Styles */
+        .autonomous-status {
+            font-size: 0.9rem;
+        }
+
+        .autonomous-status .fw-bold {
+            color: #495057;
+        }
+
+        .alert-sm {
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+
+        .alert-info.alert-sm {
+            background-color: #e7f3ff;
+            border-color: #b3d9ff;
+            color: #0c5460;
+        }
+
+        #emergencyStopBtn {
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        /* Real-Time Prices Styles */
+        .sector-card {
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 100%;
+            transition: transform 0.2s ease;
+        }
+
+        .sector-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .sector-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .stock-grid {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0.6rem;
+            background: white;
+            border-radius: 0.25rem;
+            border-left: 3px solid #6c757d;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .stock-item:hover {
+            transform: translateX(3px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stock-item.positive {
+            border-left-color: #28a745;
+            background: linear-gradient(90deg, #f8fff9 0%, #ffffff 100%);
+        }
+
+        .stock-item.negative {
+            border-left-color: #dc3545;
+            background: linear-gradient(90deg, #fff8f8 0%, #ffffff 100%);
+        }
+
+        .stock-symbol {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .stock-details {
+            text-align: right;
+            font-size: 0.8rem;
+        }
+
+        .stock-price {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .stock-change {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .stock-change.positive {
+            color: #28a745;
+        }
+
+        .stock-change.negative {
+            color: #dc3545;
+        }
+
+        .stock-rsi {
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 0.25rem;
+            height: 40px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        #emergencyStopBtn:hover:not(:disabled) {
+            background-color: #c82333;
+            border-color: #bd2130;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(220, 53, 69, 0.3);
+        }
+
+        #emergencyStopBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .badge-success { background-color: #28a745; }
+        .badge-secondary { background-color: #6c757d; }
+        .badge-dark { background-color: #343a40; }
+        .badge-danger { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line"></i> LLM Trading Assistant
+            </a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item">
+                    <span class="navbar-text">
+                        Status: <span class="status-indicator" id="statusIndicator"></span>
+                        <span id="systemStatus">Unknown</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- System Controls -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">System Controls</h5>
+                            <div>
+                                <button class="btn btn-success btn-action" id="initializeBtn">
+                                    <i class="fas fa-power-off"></i> Initialize
+                                </button>
+                                <button class="btn btn-primary btn-action" id="startTradingBtn" disabled>
+                                    <i class="fas fa-play"></i> Start Trading
+                                </button>
+                                <button class="btn btn-warning btn-action" id="stopTradingBtn" disabled>
+                                    <i class="fas fa-stop"></i> Stop Trading
+                                </button>
+                                <button class="btn btn-info btn-action" id="analyzeBtn" disabled>
+                                    <i class="fas fa-search"></i> Analyze Market
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Tabs -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="portfolio-tab" data-bs-toggle="tab" data-bs-target="#portfolio" type="button" role="tab">
+                    <i class="fas fa-briefcase"></i> Portfolio & Performance
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="proposals-tab" data-bs-toggle="tab" data-bs-target="#proposals" type="button" role="tab">
+                    <i class="fas fa-clipboard-list"></i> Trade Proposals
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts" type="button" role="tab">
+                    <i class="fas fa-bell"></i> Price Alerts
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="compliance-tab" data-bs-toggle="tab" data-bs-target="#compliance" type="button" role="tab">
+                    <i class="fas fa-shield-alt"></i> Compliance
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="mainTabContent">
+            <!-- Dashboard Tab -->
+            <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                <div class="row mt-4">
+                    <div class="col-md-8">
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Real-Time Updates</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="real-time-updates" id="realTimeUpdates">
+                                    <div class="update-item">System ready for initialization...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Quick Stats</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-12 mb-3">
+                                        <div class="metric-value" id="totalValue">$0.00</div>
+                                        <div class="metric-label">Total Portfolio Value</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-value" id="dailyPnL">$0.00</div>
+                                        <div class="metric-label">Daily P&L</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-value" id="pendingProposals">0</div>
+                                        <div class="metric-label">Pending Proposals</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Autonomous Agent Status Card -->
+                        <div class="card dashboard-card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">🤖 Autonomous Agent</h5>
+                                <span class="badge" id="agentStatusBadge">Offline</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="autonomous-status mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold">Status:</span>
+                                        <span id="agentStatusText">Stopped</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold">Mode:</span>
+                                        <span id="agentModeText">Autonomous</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="fw-bold">Decisions Made:</span>
+                                        <span id="agentDecisions">0</span>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info alert-sm mb-3">
+                                    <small>
+                                        <strong>🧠 How it works:</strong><br>
+                                        • AI analyzes market data continuously<br>
+                                        • Makes buy/sell decisions automatically<br>
+                                        • No human approval required<br>
+                                        • Risk limits protect your capital
+                                    </small>
+                                </div>
+
+                                <!-- Debug Log Area -->
+                                <div class="alert alert-warning alert-sm mb-3" id="agentDebugLog" style="display: none;">
+                                    <strong>🐛 Debug Log:</strong><br>
+                                    <div id="agentDebugContent" style="font-family: monospace; font-size: 0.75rem; max-height: 200px; overflow-y: auto;">
+                                        Debug logging will appear here...
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-danger btn-sm" id="emergencyStopBtn" disabled>
+                                        <i class="fas fa-exclamation-triangle"></i> Emergency Stop
+                                    </button>
+                                </div>
+
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-shield-alt"></i> Emergency stop closes all positions and halts the agent
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-Time Market Prices Section -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card dashboard-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">📈 Real-Time Market Prices</h5>
+                                <div>
+                                    <span class="badge bg-success" id="priceUpdateTime">Last updated: --</span>
+                                    <button class="btn btn-sm btn-outline-primary ms-2" id="refreshPricesBtn">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Market Overview Summary -->
+                                <div class="row mb-4">
+                                    <div class="col-md-3 col-sm-6 mb-2">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <div class="fw-bold text-success" id="marketsUp">0</div>
+                                            <small class="text-muted">Markets Up</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-sm-6 mb-2">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <div class="fw-bold text-danger" id="marketsDown">0</div>
+                                            <small class="text-muted">Markets Down</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-sm-6 mb-2">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <div class="fw-bold text-secondary" id="marketsFlat">0</div>
+                                            <small class="text-muted">Unchanged</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-sm-6 mb-2">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <div class="fw-bold text-info" id="avgRsi">--</div>
+                                            <small class="text-muted">Avg RSI</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Loading Indicator for Real-Time Prices -->
+                                <div id="pricesLoadingIndicator" class="text-center mb-4" style="display: none;">
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <div class="spinner-border text-primary me-3" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold">Loading Real-Time Prices...</div>
+                                            <div class="text-muted">
+                                                <span id="loadingProgress">Fetching market data for 100+ stocks across 15 sectors</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-3" style="height: 6px;">
+                                        <div id="loadingProgressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                             role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Sector Categories -->
+                                <div class="row">
+                                    <!-- Mega Cap -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🏛️ Mega Cap</h6>
+                                            <div class="stock-grid" id="mega_cap_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Large Cap Value -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">💎 Large Cap Value</h6>
+                                            <div class="stock-grid" id="large_cap_value_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Growth Leaders -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🚀 Growth Leaders</h6>
+                                            <div class="stock-grid" id="growth_leaders_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Mid Cap Gems -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">💫 Mid Cap Gems</h6>
+                                            <div class="stock-grid" id="mid_cap_gems_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Small Cap Innovators -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">⚡ Small Cap Innovators</h6>
+                                            <div class="stock-grid" id="small_cap_innovators_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Biotech Emerging -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🧬 Biotech Emerging</h6>
+                                            <div class="stock-grid" id="biotech_emerging_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fintech Disruptors -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">💳 Fintech Disruptors</h6>
+                                            <div class="stock-grid" id="fintech_disruptors_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Clean Energy -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🌱 Clean Energy</h6>
+                                            <div class="stock-grid" id="clean_energy_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Cybersecurity -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🔒 Cybersecurity</h6>
+                                            <div class="stock-grid" id="cybersecurity_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Robotics & AI -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🤖 Robotics & AI</h6>
+                                            <div class="stock-grid" id="robotics_ai_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- International Growth -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🌍 International Growth</h6>
+                                            <div class="stock-grid" id="international_growth_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Value-Growth Hybrid -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">⚖️ Value-Growth Hybrid</h6>
+                                            <div class="stock-grid" id="value_growth_hybrid_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Space Economy -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🚀 Space Economy</h6>
+                                            <div class="stock-grid" id="space_economy_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Quantum Computing -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🔬 Quantum Computing</h6>
+                                            <div class="stock-grid" id="quantum_computing_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Gaming & Metaverse -->
+                                    <div class="col-lg-4 col-md-6 mb-4">
+                                        <div class="sector-card">
+                                            <h6 class="sector-title">🎮 Gaming & Metaverse</h6>
+                                            <div class="stock-grid" id="gaming_metaverse_stocks">
+                                                <!-- Will be populated by JavaScript -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Portfolio Tab -->
+            <div class="tab-pane fade" id="portfolio" role="tabpanel">
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Account Summary</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <td>Total Value:</td>
+                                        <td class="text-end" id="portfolioTotalValue">$0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cash Balance:</td>
+                                        <td class="text-end" id="cashBalance">$0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Buying Power:</td>
+                                        <td class="text-end" id="buyingPower">$0.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Unrealized P&L:</td>
+                                        <td class="text-end" id="unrealizedPnL">$0.00</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Asset Allocation</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="allocationChart" width="400" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Current Positions</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Qty</th>
+                                                <th>Price</th>
+                                                <th>Value</th>
+                                                <th>P&L</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="positionsTable">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">No positions</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Recent Orders</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Action</th>
+                                                <th>Qty</th>
+                                                <th>Price</th>
+                                                <th>Status</th>
+                                                <th>Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ordersTable">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">No orders</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics Section -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Performance Metrics</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-2">
+                                        <div class="metric-value" id="totalReturn">0%</div>
+                                        <div class="metric-label">Total Return</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-value" id="annualReturn">0%</div>
+                                        <div class="metric-label">Annual Return</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-value" id="sharpeRatio">0.00</div>
+                                        <div class="metric-label">Sharpe Ratio</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-value" id="maxDrawdown">0%</div>
+                                        <div class="metric-label">Max Drawdown</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-value" id="winRate">0%</div>
+                                        <div class="metric-label">Win Rate</div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="metric-value" id="alpha">0%</div>
+                                        <div class="metric-label">Alpha</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Portfolio Performance Chart -->
+                <div class="row mt-4">
+                    <div class="col-md-8">
+                        <div class="card dashboard-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Portfolio Value Over Time</h5>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary active" data-period="1D">1D</button>
+                                    <button type="button" class="btn btn-outline-primary" data-period="1W">1W</button>
+                                    <button type="button" class="btn btn-outline-primary" data-period="1M">1M</button>
+                                    <button type="button" class="btn btn-outline-primary" data-period="3M">3M</button>
+                                    <button type="button" class="btn btn-outline-primary" data-period="ALL">ALL</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="portfolioChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Position Performance</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Symbol</th>
+                                                <th>Return</th>
+                                                <th>Change</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="positionPerformanceTable">
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted">No positions</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trade Proposals Tab -->
+            <div class="tab-pane fade" id="proposals" role="tabpanel">
+                <div class="mt-4">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Trade Proposals</h5>
+                        </div>
+                        <div class="card-body" style="max-height: 70vh; overflow-y: auto;">
+                            <div id="proposalsList">
+                                <div class="text-center text-muted">No proposals generated yet. Run "Analyze Market" to generate trade recommendations.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Price Alerts Tab -->
+            <div class="tab-pane fade" id="alerts" role="tabpanel">
+                <div class="row mt-4">
+                    <!-- Create Alert Section -->
+                    <div class="col-md-4">
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Create Price Alert</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="createAlertForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Symbol</label>
+                                        <input type="text" class="form-control" id="alertSymbol" placeholder="e.g., AAPL" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Alert Type</label>
+                                        <select class="form-control" id="alertType" required>
+                                            <option value="price_above">Price Above</option>
+                                            <option value="price_below">Price Below</option>
+                                            <option value="price_change_percent">Price Change %</option>
+                                            <option value="rsi_overbought">RSI Overbought</option>
+                                            <option value="rsi_oversold">RSI Oversold</option>
+                                            <option value="volume_spike">Volume Spike</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Target Value</label>
+                                        <input type="number" class="form-control" id="alertValue" step="0.01" placeholder="e.g., 250.00" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Message (optional)</label>
+                                        <input type="text" class="form-control" id="alertMessage" placeholder="Custom alert message">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Expires In (hours)</label>
+                                        <select class="form-control" id="alertExpiry">
+                                            <option value="">Never expires</option>
+                                            <option value="1">1 hour</option>
+                                            <option value="6">6 hours</option>
+                                            <option value="24" selected>24 hours</option>
+                                            <option value="168">1 week</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-bell"></i> Create Alert
+                                    </button>
+                                </form>
+
+                                <hr class="my-3">
+
+                                <div class="d-grid">
+                                    <button class="btn btn-success" id="createSmartAlertsBtn">
+                                        <i class="fas fa-magic"></i> Create Smart Alerts for AAPL
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alert Statistics -->
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Alert Statistics</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="metric-value" id="totalAlertsCount">0</div>
+                                        <div class="metric-label">Total Alerts</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="metric-value" id="activeAlertsCount">0</div>
+                                        <div class="metric-label">Active Alerts</div>
+                                    </div>
+                                    <div class="col-12 mt-3">
+                                        <div class="alert alert-info" id="monitoringStatus">
+                                            <i class="fas fa-clock"></i> Monitoring every 30 seconds
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Alerts List -->
+                    <div class="col-md-8">
+                        <div class="card dashboard-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Active Price Alerts</h5>
+                                <button class="btn btn-sm btn-outline-primary" id="refreshAlertsBtn">
+                                    <i class="fas fa-refresh"></i> Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="alertsList">
+                                    <div class="text-center text-muted">Loading alerts...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Notifications -->
+                        <div class="card dashboard-card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Recent Alert Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="notificationsList">
+                                    <div class="text-center text-muted">No recent notifications</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compliance Tab -->
+            <div class="tab-pane fade" id="compliance" role="tabpanel">
+                <div class="mt-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card dashboard-card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Compliance Status</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" disabled id="recordKeeping">
+                                                <label class="form-check-label">Record Keeping</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" disabled id="insiderTrading">
+                                                <label class="form-check-label">Insider Trading Protocols</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" disabled id="esgConsiderations">
+                                                <label class="form-check-label">ESG Considerations</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" disabled id="reportingThresholds">
+                                                <label class="form-check-label">Reporting Thresholds</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card dashboard-card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Recent Compliance Report</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="complianceReport">
+                                        <div class="text-center text-muted">No compliance data available</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true" aria-labelledby="loadingModalLabel">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status" aria-hidden="true">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3 mb-0" id="loadingModalLabel">Processing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+        let systemInitialized = false;
+        let allocationChart = null;
+        let performanceChart = null;
+
+        // DOM Elements
+        const statusIndicator = document.getElementById('statusIndicator');
+        const systemStatus = document.getElementById('systemStatus');
+        const initializeBtn = document.getElementById('initializeBtn');
+        const startTradingBtn = document.getElementById('startTradingBtn');
+        const stopTradingBtn = document.getElementById('stopTradingBtn');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const realTimeUpdates = document.getElementById('realTimeUpdates');
+        const emergencyStopBtn = document.getElementById('emergencyStopBtn');
+        const agentStatusBadge = document.getElementById('agentStatusBadge');
+        const agentStatusText = document.getElementById('agentStatusText');
+        const agentModeText = document.getElementById('agentModeText');
+        const agentDecisions = document.getElementById('agentDecisions');
+
+        // Initialize charts
+        let priceChart = null;
+
+        function initializeCharts() {
+            // Allocation Chart
+            const allocationCtx = document.getElementById('allocationChart').getContext('2d');
+            allocationChart = new Chart(allocationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Cash', 'Equities', 'Fixed Income'],
+                    datasets: [{
+                        data: [100, 0, 0],
+                        backgroundColor: ['#ffc107', '#28a745', '#007bff']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Performance Chart
+            const performanceCtx = document.getElementById('performanceChart').getContext('2d');
+            performanceChart = new Chart(performanceCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: [],
+                        borderColor: '#007bff',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+
+            // Price Chart
+            const priceCtx = document.getElementById('priceChart').getContext('2d');
+            priceChart = new Chart(priceCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false
+                        },
+                        volume: {
+                            type: 'linear',
+                            display: false,
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false,
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update system status
+        function updateSystemStatus(status) {
+            statusIndicator.className = 'status-indicator';
+            if (status === 'running') {
+                statusIndicator.classList.add('status-running');
+                systemStatus.textContent = 'Running';
+                startTradingBtn.disabled = true;
+                stopTradingBtn.disabled = false;
+                // Update autonomous agent status
+                updateAutonomousAgentStatus('running');
+            } else if (status === 'stopped') {
+                statusIndicator.classList.add('status-stopped');
+                systemStatus.textContent = 'Stopped';
+                startTradingBtn.disabled = false;
+                stopTradingBtn.disabled = true;
+                // Don't automatically update autonomous agent status - it's independent
+            } else {
+                statusIndicator.classList.add('status-unknown');
+                systemStatus.textContent = 'Unknown';
+                startTradingBtn.disabled = true;
+                stopTradingBtn.disabled = true;
+                // Update autonomous agent status
+                updateAutonomousAgentStatus('offline');
+            }
+        }
+
+        function updateAutonomousAgentStatus(status, decisionsCount = 0) {
+            const statusMap = {
+                'running': {
+                    badgeClass: 'badge-success',
+                    badgeText: 'Active',
+                    statusText: 'Trading Autonomously',
+                    emergencyEnabled: true
+                },
+                'stopped': {
+                    badgeClass: 'badge-secondary',
+                    badgeText: 'Stopped',
+                    statusText: 'Not Trading',
+                    emergencyEnabled: false
+                },
+                'offline': {
+                    badgeClass: 'badge-dark',
+                    badgeText: 'Offline',
+                    statusText: 'System Offline',
+                    emergencyEnabled: false
+                },
+                'error': {
+                    badgeClass: 'badge-danger',
+                    badgeText: 'Error',
+                    statusText: 'Error State',
+                    emergencyEnabled: false
+                }
+            };
+
+            const config = statusMap[status] || statusMap['offline'];
+
+            // Log status changes with stack trace to find who's calling this
+            const currentStatus = agentStatusText.textContent;
+            if (currentStatus !== config.statusText) {
+                // Get the function that called this
+                const stack = new Error().stack;
+                const caller = stack.split('\n')[2]?.trim() || 'Unknown';
+                logAgentDebug(`🔄 Status Change: ${currentStatus} → ${config.statusText} (decisions: ${decisionsCount})`);
+                logAgentDebug(`📍 Called by: ${caller}`);
+            }
+
+            agentStatusBadge.className = `badge ${config.badgeClass}`;
+            agentStatusBadge.textContent = config.badgeText;
+            agentStatusText.textContent = config.statusText;
+            agentDecisions.textContent = decisionsCount;
+            emergencyStopBtn.disabled = !config.emergencyEnabled;
+        }
+
+        // Add real-time update
+        function addRealTimeUpdate(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const updateItem = document.createElement('div');
+            updateItem.className = 'update-item';
+            updateItem.innerHTML = `<strong>${timestamp}</strong> - ${message}`;
+
+            realTimeUpdates.insertBefore(updateItem, realTimeUpdates.firstChild);
+
+            // Keep only last 50 updates
+            while (realTimeUpdates.children.length > 50) {
+                realTimeUpdates.removeChild(realTimeUpdates.lastChild);
+            }
+        }
+
+        // API Functions
+        async function apiCall(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    ...options
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('API call failed:', error);
+                addRealTimeUpdate(`API error: ${error.message}`, 'error');
+                return { error: error.message };
+            }
+        }
+
+        // Load system status
+        async function loadSystemStatus() {
+            const result = await apiCall('/api/status');
+            if (result.status) {
+                updateSystemStatus(result.status);
+                systemInitialized = result.status !== 'not_initialized';
+
+                initializeBtn.disabled = systemInitialized;
+                analyzeBtn.disabled = !systemInitialized;
+            }
+        }
+
+        // Global variable for portfolio chart
+        let portfolioChart = null;
+
+        // Load portfolio data
+        async function loadPortfolioData() {
+            if (!systemInitialized) return;
+
+            try {
+                const result = await apiCall('/api/portfolio');
+            if (result.account) {
+                // Update portfolio summary (with null checks)
+                const totalValueEl = document.getElementById('totalValue');
+                const portfolioTotalValueEl = document.getElementById('portfolioTotalValue');
+                const cashBalanceEl = document.getElementById('cashBalance');
+                const buyingPowerEl = document.getElementById('buyingPower');
+                const unrealizedPnLEl = document.getElementById('unrealizedPnL');
+
+                if (totalValueEl) totalValueEl.textContent = `$${result.account.total_value.toFixed(2)}`;
+                if (portfolioTotalValueEl) portfolioTotalValueEl.textContent = `$${result.account.total_value.toFixed(2)}`;
+                if (cashBalanceEl) cashBalanceEl.textContent = `$${result.account.cash_balance.toFixed(2)}`;
+                if (buyingPowerEl) buyingPowerEl.textContent = `$${result.account.buying_power.toFixed(2)}`;
+                if (unrealizedPnLEl) unrealizedPnLEl.textContent = `$${result.account.unrealized_pnl.toFixed(2)}`;
+
+                // Update performance metrics (with null checks)
+                if (result.performance) {
+                    const totalReturnEl = document.getElementById('totalReturn');
+                    const annualReturnEl = document.getElementById('annualReturn');
+                    const sharpeRatioEl = document.getElementById('sharpeRatio');
+                    const maxDrawdownEl = document.getElementById('maxDrawdown');
+                    const winRateEl = document.getElementById('winRate');
+                    const alphaEl = document.getElementById('alpha');
+
+                    if (totalReturnEl) {
+                        totalReturnEl.textContent = `${result.performance.total_return >= 0 ? '+' : ''}${result.performance.total_return.toFixed(2)}%`;
+                        totalReturnEl.className = `metric-value ${result.performance.total_return >= 0 ? 'performance-positive' : 'performance-negative'}`;
+                    }
+                    if (annualReturnEl) {
+                        annualReturnEl.textContent = `${result.performance.annual_return >= 0 ? '+' : ''}${result.performance.annual_return.toFixed(2)}%`;
+                        annualReturnEl.className = `metric-value ${result.performance.annual_return >= 0 ? 'performance-positive' : 'performance-negative'}`;
+                    }
+                    if (sharpeRatioEl) {
+                        sharpeRatioEl.textContent = result.performance.sharpe_ratio.toFixed(2);
+                    }
+                    if (maxDrawdownEl) {
+                        maxDrawdownEl.textContent = `${result.performance.max_drawdown.toFixed(2)}%`;
+                    }
+                    if (winRateEl) {
+                        winRateEl.textContent = `${result.performance.win_rate.toFixed(1)}%`;
+                    }
+                    if (alphaEl) {
+                        alphaEl.textContent = `${result.performance.alpha >= 0 ? '+' : ''}${result.performance.alpha.toFixed(2)}%`;
+                        alphaEl.className = `metric-value ${result.performance.alpha >= 0 ? 'performance-positive' : 'performance-negative'}`;
+                    }
+                }
+
+                // Update positions table
+                const positionsTable = document.getElementById('positionsTable');
+                positionsTable.innerHTML = '';
+
+                if (Object.keys(result.positions).length === 0) {
+                    positionsTable.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No positions</td></tr>';
+                } else {
+                    Object.entries(result.positions).forEach(([symbol, position]) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${symbol}</td>
+                            <td>${position.quantity}</td>
+                            <td>$${position.current_price.toFixed(2)}</td>
+                            <td>$${position.market_value.toFixed(2)}</td>
+                            <td class="${position.unrealized_pnl >= 0 ? 'performance-positive' : 'performance-negative'}">
+                                $${position.unrealized_pnl.toFixed(2)}
+                            </td>
+                        `;
+                        positionsTable.appendChild(row);
+                    });
+                }
+
+                // Update position performance table (with null check)
+                const positionPerformanceTable = document.getElementById('positionPerformanceTable');
+                if (positionPerformanceTable) {
+                    positionPerformanceTable.innerHTML = '';
+
+                    if (result.position_performance && result.position_performance.length > 0) {
+                        result.position_performance.forEach(pos => {
+                            const dailyChange = pos.current_price * 0.01; // Simulate daily change
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td><strong>${pos.symbol}</strong></td>
+                                <td class="${pos.return_pct >= 0 ? 'performance-positive' : 'performance-negative'}">
+                                    ${pos.return_pct >= 0 ? '+' : ''}${pos.return_pct.toFixed(2)}%
+                                </td>
+                                <td class="${dailyChange >= 0 ? 'performance-positive' : 'performance-negative'}">
+                                    ${dailyChange >= 0 ? '+' : ''}$${dailyChange.toFixed(2)}
+                                </td>
+                            `;
+                            positionPerformanceTable.appendChild(row);
+                        });
+                    } else {
+                        positionPerformanceTable.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No positions</td></tr>';
+                    }
+                }
+
+                // Update allocation chart
+                if (allocationChart && result.allocation) {
+                    const cash = result.account.cash_balance / result.account.total_value * 100;
+                    const equities = (result.allocation.Equities || 0) * 100;
+                    const fixedIncome = (result.allocation['Fixed Income'] || 0) * 100;
+
+                    allocationChart.data.datasets[0].data = [cash, equities, fixedIncome];
+                    allocationChart.update();
+                }
+
+                // Update order history table
+                const ordersTable = document.getElementById('ordersTable');
+                ordersTable.innerHTML = '';
+
+                if (result.order_history && result.order_history.length > 0) {
+                    result.order_history.forEach(order => {
+                        const statusBadge = order.status === 'FILLED' ? 'bg-success' :
+                                          order.status === 'REJECTED' ? 'bg-danger' : 'bg-warning';
+
+                        const orderTime = order.filled_at || order.created_at;
+                        const timeStr = orderTime ? new Date(orderTime).toLocaleTimeString() : 'N/A';
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><strong>${order.symbol}</strong></td>
+                            <td>
+                                <span class="badge ${order.action === 'BUY' ? 'bg-success' : 'bg-danger'}">
+                                    ${order.action}
+                                </span>
+                            </td>
+                            <td>${order.quantity}</td>
+                            <td>$${order.price.toFixed(2)}</td>
+                            <td>
+                                <span class="badge ${statusBadge}">
+                                    ${order.status}
+                                </span>
+                            </td>
+                            <td class="small">${timeStr}</td>
+                        `;
+                        ordersTable.appendChild(row);
+                    });
+                } else {
+                    ordersTable.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No orders yet</td></tr>';
+                }
+
+                // Load and update portfolio chart
+                await loadPortfolioChart();
+            }
+            } catch (error) {
+                console.error('Error in loadPortfolioData:', error);
+                addRealTimeUpdate(`Portfolio data error: ${error.message}`, 'danger');
+            }
+        }
+
+        // Load portfolio performance chart
+        async function loadPortfolioChart(period = '1D') {
+            try {
+                const result = await apiCall(`/api/portfolio_history?period=${period}`);
+            if (result.history) {
+                const ctx = document.getElementById('portfolioChart');
+                if (!ctx) return;
+
+                // Destroy existing chart
+                if (portfolioChart) {
+                    portfolioChart.destroy();
+                }
+
+                const labels = result.history.map(h => {
+                    const date = new Date(h.timestamp);
+                    if (period === '1D') return date.toLocaleTimeString();
+                    return date.toLocaleDateString();
+                });
+
+                const values = result.history.map(h => h.value);
+                const isPositive = values[values.length - 1] > values[0];
+
+                portfolioChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Portfolio Value',
+                            data: values,
+                            borderColor: isPositive ? '#28a745' : '#dc3545',
+                            backgroundColor: isPositive ? 'rgba(40, 167, 69, 0.1)' : 'rgba(220, 53, 69, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '$' + value.toFixed(0);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `$${context.raw.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            } catch (error) {
+                console.error('Error in loadPortfolioChart:', error);
+                addRealTimeUpdate(`Portfolio chart error: ${error.message}`, 'danger');
+            }
+        }
+
+        // Load trade proposals (all types: approved, rejected, pending)
+        async function loadProposals() {
+            if (!systemInitialized) return;
+
+            try {
+                const result = await apiCall('/api/proposals');
+            const proposalsList = document.getElementById('proposalsList');
+
+            if (result.proposals && result.proposals.length > 0) {
+                // Update proposal count (only pending approvals)
+                const pendingCount = result.summary ? result.summary.pending_approval :
+                                   result.proposals.filter(p => p.status === 'pending_approval').length;
+                const pendingProposalsEl = document.getElementById('pendingProposals');
+                if (pendingProposalsEl) pendingProposalsEl.textContent = pendingCount;
+
+                proposalsList.innerHTML = '';
+
+                // Group proposals by status for better organization
+                const groupedProposals = {
+                    'pending_approval': [],
+                    'approved': [],
+                    'risk_rejected': [],
+                    'governance_rejected': []
+                };
+
+                result.proposals.forEach(proposal => {
+                    groupedProposals[proposal.status] = groupedProposals[proposal.status] || [];
+                    groupedProposals[proposal.status].push(proposal);
+                });
+
+                // Display proposals by status
+                Object.entries(groupedProposals).forEach(([status, proposals]) => {
+                    if (proposals.length === 0) return;
+
+                    // Status section header
+                    const statusLabels = {
+                        'pending_approval': '✅ Ready for Approval',
+                        'approved': '🎯 Approved & Executable',
+                        'risk_rejected': '⚠️ Risk Management Rejected',
+                        'governance_rejected': '❌ Governance Rejected'
+                    };
+
+                    const statusColors = {
+                        'pending_approval': 'success',
+                        'approved': 'primary',
+                        'risk_rejected': 'warning',
+                        'governance_rejected': 'danger'
+                    };
+
+                    const sectionHeader = document.createElement('div');
+                    sectionHeader.className = `alert alert-${statusColors[status]} mb-3`;
+                    sectionHeader.innerHTML = `
+                        <strong>${statusLabels[status]}</strong> (${proposals.length} proposal${proposals.length !== 1 ? 's' : ''})
+                    `;
+                    proposalsList.appendChild(sectionHeader);
+
+                    // Display proposals in this status
+                    proposals.forEach(proposal => {
+                        const proposalCard = document.createElement('div');
+                        proposalCard.className = `card proposal-card ${proposal.action.toLowerCase()} mb-3`;
+
+                        // Status-specific styling and actions
+                        let statusBadge, actionButtons;
+
+                        switch (status) {
+                            case 'pending_approval':
+                                statusBadge = '<span class="badge bg-success">Ready for Approval</span>';
+                                actionButtons = `
+                                    <button class="btn btn-success btn-sm" onclick="approveProposal('${proposal.id}')">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectProposal('${proposal.id}')">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                `;
+                                break;
+                            case 'approved':
+                                statusBadge = '<span class="badge bg-primary">Approved & Executable</span>';
+                                actionButtons = '<small class="text-muted">Trade ready for execution</small>';
+                                break;
+                            case 'risk_rejected':
+                                statusBadge = '<span class="badge bg-warning text-dark">Risk Rejected</span>';
+                                actionButtons = `<small class="text-muted">Risk: ${proposal.risk_reason}</small>`;
+                                break;
+                            case 'governance_rejected':
+                                statusBadge = '<span class="badge bg-danger">Governance Rejected</span>';
+                                actionButtons = `<small class="text-muted">Reason: ${proposal.governance_reason}</small>`;
+                                break;
+                        }
+
+                        proposalCard.innerHTML = `
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0">${proposal.action} ${proposal.quantity} ${proposal.symbol}</h6>
+                                            ${statusBadge}
+                                        </div>
+                                        <p class="card-text">
+                                            <strong>Price:</strong> $${proposal.price.toFixed(2)}<br>
+                                            <strong>Conviction:</strong> ${(proposal.conviction * 100).toFixed(1)}%<br>
+                                            <strong>Risk Score:</strong> ${proposal.risk_score.toFixed(2)}<br>
+                                            <strong>Risk Status:</strong> ${proposal.risk_approved ? '✅ Approved' : '❌ Rejected'}<br>
+                                            <strong>Rationale:</strong> ${proposal.rationale}
+                                        </p>
+                                        <small class="text-muted">Generated: ${new Date(proposal.submitted_at).toLocaleString()}</small>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        ${actionButtons}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        proposalsList.appendChild(proposalCard);
+                    });
+                });
+
+            } else {
+                const pendingProposalsEl = document.getElementById('pendingProposals');
+                if (pendingProposalsEl) pendingProposalsEl.textContent = '0';
+                proposalsList.innerHTML = '<div class="text-center text-muted">No proposals generated yet. Run "Analyze Market" to generate trade recommendations.</div>';
+            }
+            } catch (error) {
+                console.error('Error in loadProposals:', error);
+                addRealTimeUpdate(`Proposals loading error: ${error.message}`, 'danger');
+            }
+        }
+
+        // Load performance data
+        async function loadPerformanceData() {
+            if (!systemInitialized) return;
+
+            const result = await apiCall('/api/performance');
+            if (result.metrics) {
+                const annualReturnEl = document.getElementById('annualReturn');
+                const sharpeRatioEl = document.getElementById('sharpeRatio');
+                const maxDrawdownEl = document.getElementById('maxDrawdown');
+                const winRateEl = document.getElementById('winRate');
+                const alphaEl = document.getElementById('alpha');
+                const betaEl = document.getElementById('beta');
+
+                if (annualReturnEl) {
+                    annualReturnEl.textContent = `${(result.metrics.annual_return * 100).toFixed(1)}%`;
+                }
+                if (sharpeRatioEl) {
+                    sharpeRatioEl.textContent = result.metrics.sharpe_ratio.toFixed(2);
+                }
+                if (maxDrawdownEl) {
+                    maxDrawdownEl.textContent = `${(result.metrics.max_drawdown * 100).toFixed(1)}%`;
+                }
+                if (winRateEl) {
+                    winRateEl.textContent = `${(result.metrics.win_rate * 100).toFixed(1)}%`;
+                }
+                if (alphaEl) {
+                    alphaEl.textContent = `${(result.metrics.alpha * 100).toFixed(1)}%`;
+                }
+                if (betaEl && result.metrics.beta !== undefined) {
+                    betaEl.textContent = result.metrics.beta.toFixed(2);
+                }
+            }
+
+            if (result.market_regime) {
+                const currentRegimeEl = document.getElementById('currentRegime');
+                const regimeProbabilityEl = document.getElementById('regimeProbability');
+
+                if (currentRegimeEl) {
+                    currentRegimeEl.textContent = result.market_regime.current;
+                }
+                if (regimeProbabilityEl) {
+                    regimeProbabilityEl.textContent = `${(result.market_regime.probability * 100).toFixed(0)}% Confidence`;
+                }
+            }
+        }
+
+        // Load compliance data
+        async function loadComplianceData() {
+            if (!systemInitialized) return;
+
+            const result = await apiCall('/api/compliance');
+            if (result.status) {
+                document.getElementById('recordKeeping').checked = result.status.record_keeping_enabled;
+                document.getElementById('insiderTrading').checked = result.status.insider_trading_protocols;
+                document.getElementById('esgConsiderations').checked = result.status.esg_considerations;
+                document.getElementById('reportingThresholds').checked = result.status.reporting_thresholds_enabled;
+            }
+
+            if (result.recent_report) {
+                const complianceReport = document.getElementById('complianceReport');
+                complianceReport.innerHTML = `
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Total Checks:</strong> ${result.recent_report.summary.total_compliance_checks}
+                        </div>
+                        <div class="col-6">
+                            <strong>Pass Rate:</strong> ${(result.recent_report.summary.pass_rate * 100).toFixed(1)}%
+                        </div>
+                        <div class="col-12 mt-2">
+                            <span class="badge ${result.recent_report.compliance_status === 'COMPLIANT' ? 'bg-success' : 'bg-warning'}">
+                                ${result.recent_report.compliance_status}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Approve proposal
+        async function approveProposal(proposalId) {
+            const result = await apiCall(`/api/proposals/${proposalId}/approve`, {
+                method: 'POST',
+                body: JSON.stringify({ approver: 'Web User' })
+            });
+
+            if (result.status === 'approved') {
+                addRealTimeUpdate(`Proposal ${proposalId} approved and executed`);
+                loadProposals();
+                loadPortfolioData();
+            } else {
+                addRealTimeUpdate(`Failed to approve proposal: ${result.error}`, 'error');
+            }
+        }
+
+        // Reject proposal
+        async function rejectProposal(proposalId) {
+            const reason = prompt('Reason for rejection:') || 'No reason provided';
+            const result = await apiCall(`/api/proposals/${proposalId}/reject`, {
+                method: 'POST',
+                body: JSON.stringify({ approver: 'Web User', reason })
+            });
+
+            if (result.status === 'rejected') {
+                addRealTimeUpdate(`Proposal ${proposalId} rejected: ${reason}`);
+                loadProposals();
+            } else {
+                addRealTimeUpdate(`Failed to reject proposal: ${result.error}`, 'error');
+            }
+        }
+
+        // Event Listeners
+        initializeBtn.addEventListener('click', async () => {
+            const loadingModalElement = document.getElementById('loadingModal');
+            const loadingModal = new bootstrap.Modal(loadingModalElement);
+            loadingModal.show();
+
+            try {
+                const result = await apiCall('/api/initialize', { method: 'POST' });
+
+                if (result.status === 'success') {
+                    systemInitialized = true;
+                    initializeBtn.disabled = true;
+                    analyzeBtn.disabled = false;
+                    updateSystemStatus('stopped');
+                    addRealTimeUpdate('System initialized successfully');
+
+                    // Load initial data with staggered approach to prevent blocking
+                    const initFunctions = [
+                        { fn: loadPortfolioData, name: 'Portfolio data' },
+                        { fn: loadProposals, name: 'Proposals' },
+                        { fn: loadPerformanceData, name: 'Performance data' },
+                        { fn: loadComplianceData, name: 'Compliance data' },
+                        { fn: loadAlerts, name: 'Alerts' },
+                        { fn: loadAlertStatistics, name: 'Alert statistics' },
+                        { fn: loadNotifications, name: 'Notifications' },
+                        { fn: loadRealTimePrices, name: 'Real-time prices' }
+                    ];
+
+                    // Execute initialization functions with proper staggering
+                    async function executeInitStaggered() {
+                        for (let i = 0; i < initFunctions.length; i++) {
+                            const { fn, name } = initFunctions[i];
+                            const delay = i * 300;
+
+                            setTimeout(async () => {
+                                try {
+                                    await fn();
+                                    addRealTimeUpdate(`${name} loaded`, 'info');
+                                } catch (e) {
+                                    console.error(`${name} failed:`, e);
+                                    addRealTimeUpdate(`${name} loading failed: ${e.message}`, 'warning');
+                                }
+                            }, delay);
+                        }
+                    }
+
+                    // Start initialization loading without blocking
+                    requestAnimationFrame(executeInitStaggered);
+
+                    addRealTimeUpdate('Initial data loaded');
+                } else {
+                    addRealTimeUpdate(`Initialization failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addRealTimeUpdate(`Initialization error: ${error.message}`, 'error');
+            } finally {
+                // Force hide modal
+                loadingModal.hide();
+
+                // Force modal backdrop removal if it gets stuck
+                setTimeout(() => {
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                    loadingModalElement.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                }, 500);
+            }
+        });
+
+        startTradingBtn.addEventListener('click', async () => {
+            try {
+                logAgentDebug('🚀 USER clicked Start Trading button');
+                // Start autonomous trading by default
+                const result = await apiCall('/api/start_trading', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ mode: 'autonomous' })
+                });
+
+                if (result.status === 'started') {
+                    updateSystemStatus('running');
+                    if (result.mode === 'autonomous') {
+                        addRealTimeUpdate('🤖 Autonomous trading started - AI agent will trade independently', 'success');
+                        addRealTimeUpdate('✅ No human approval required - AI makes all trading decisions', 'info');
+                    } else {
+                        addRealTimeUpdate('👤 Assisted trading started - proposals require approval', 'info');
+                    }
+                } else {
+                    addRealTimeUpdate(`Failed to start trading: ${result.error || 'Unknown error'}`, 'danger');
+                }
+            } catch (error) {
+                console.error('Failed to start trading:', error);
+                addRealTimeUpdate(`Failed to start trading: ${error.message}`, 'danger');
+            }
+        });
+
+        stopTradingBtn.addEventListener('click', async () => {
+            try {
+                logAgentDebug('🛑 USER clicked Stop Trading button');
+                const result = await apiCall('/api/stop_trading', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ mode: 'autonomous' })
+                });
+
+                if (result.status === 'stopped') {
+                    updateSystemStatus('stopped');
+                    if (result.mode === 'autonomous') {
+                        addRealTimeUpdate('🛑 Autonomous trading stopped - AI agent halted', 'warning');
+                    } else {
+                        addRealTimeUpdate('🛑 Assisted trading stopped', 'warning');
+                    }
+                } else {
+                    addRealTimeUpdate(`Failed to stop trading: ${result.error || 'Unknown error'}`, 'danger');
+                }
+            } catch (error) {
+                console.error('Failed to stop trading:', error);
+                addRealTimeUpdate(`Failed to stop trading: ${error.message}`, 'danger');
+            }
+        });
+
+        emergencyStopBtn.addEventListener('click', async () => {
+            // Double confirmation for emergency stop
+            const confirmed = confirm(
+                '⚠️ EMERGENCY STOP ⚠️\n\n' +
+                'This will immediately:\n' +
+                '• Close ALL open positions\n' +
+                '• Stop the autonomous trading agent\n' +
+                '• Cannot be undone\n\n' +
+                'Are you sure you want to proceed?'
+            );
+
+            if (!confirmed) return;
+
+            try {
+                emergencyStopBtn.disabled = true;
+                emergencyStopBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Stopping...';
+
+                const result = await apiCall('/api/emergency_stop', { method: 'POST' });
+
+                if (result.status === 'emergency_stopped') {
+                    updateSystemStatus('stopped');
+                    addRealTimeUpdate('🚨 EMERGENCY STOP EXECUTED - All positions closed', 'danger');
+                    addRealTimeUpdate('🛑 Autonomous agent stopped immediately', 'warning');
+                } else {
+                    addRealTimeUpdate(`Emergency stop failed: ${result.error || 'Unknown error'}`, 'danger');
+                }
+            } catch (error) {
+                console.error('Emergency stop failed:', error);
+                addRealTimeUpdate(`Emergency stop failed: ${error.message}`, 'danger');
+            } finally {
+                emergencyStopBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Emergency Stop';
+            }
+        });
+
+        analyzeBtn.addEventListener('click', async () => {
+            const loadingModalElement = document.getElementById('loadingModal');
+            const loadingModal = new bootstrap.Modal(loadingModalElement);
+            loadingModal.show();
+
+            // Update modal with progress
+            document.querySelector('#loadingModal .modal-body p').textContent = 'Analyzing market data...';
+
+            try {
+                const result = await apiCall('/api/manual_analysis', { method: 'POST' });
+
+                if (result.status === 'success') {
+                    const proposalCount = result.proposals_generated || 0;
+                    addRealTimeUpdate(`Analysis complete: ${proposalCount} proposals generated`);
+                    await loadProposals();
+                    addRealTimeUpdate('Trade proposals updated');
+                } else {
+                    addRealTimeUpdate(`Analysis failed: ${result.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                addRealTimeUpdate(`Analysis error: ${error.message}`, 'error');
+            } finally {
+                // Reset modal text and force hide
+                document.querySelector('#loadingModal .modal-body p').textContent = 'Processing...';
+                loadingModal.hide();
+
+                // Force modal backdrop removal if it gets stuck
+                setTimeout(() => {
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                    loadingModalElement.style.display = 'none';
+                    document.body.classList.remove('modal-open');
+                }, 500);
+            }
+        });
+
+        // Price Alerts Event Listeners
+        document.getElementById('createAlertForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await createAlert();
+        });
+
+        document.getElementById('createSmartAlertsBtn').addEventListener('click', async () => {
+            await createSmartAlerts();
+        });
+
+        document.getElementById('refreshAlertsBtn').addEventListener('click', async () => {
+            await loadAlerts();
+            await loadAlertStatistics();
+            await loadNotifications();
+            addRealTimeUpdate('Price alerts refreshed');
+        });
+
+        // Socket.IO event handlers
+        socket.on('connect', function() {
+            addRealTimeUpdate('Connected to trading assistant');
+        });
+
+        socket.on('analysis_complete', function(data) {
+            let message = `Analysis complete: ${data.proposals_generated} proposals generated`;
+
+            if (data.detailed_results) {
+                const approved = data.proposals_approved || 0;
+                const riskRejected = data.proposals_risk_rejected || 0;
+                const govRejected = data.proposals_governance_rejected || 0;
+
+                message += ` (✅ ${approved} approved, ⚠️ ${riskRejected} risk rejected, ❌ ${govRejected} governance rejected)`;
+            } else {
+                message += `, ${data.proposals_approved} approved`;
+            }
+
+            addRealTimeUpdate(message);
+            loadProposals();
+        });
+
+        socket.on('trade_executed', function(data) {
+            const message = `Trade executed: ${data.action} ${data.quantity} ${data.symbol} @ $${data.price}`;
+            addRealTimeUpdate(message);
+            loadPortfolioData();
+        });
+
+        socket.on('analysis_progress', function(data) {
+            // Update loading modal with detailed progress
+            const modalBody = document.querySelector('#loadingModal .modal-body p');
+            if (modalBody) {
+                let progressText = `${data.step} (${data.progress}%)`;
+                if (data.details) {
+                    progressText += `\n${data.details}`;
+                }
+                modalBody.innerHTML = progressText.replace(/\n/g, '<br>');
+            }
+
+            // Add to real-time updates with details
+            const updateMessage = data.details ?
+                `${data.step}: ${data.details}` :
+                `${data.step} (${data.progress}%)`;
+            addRealTimeUpdate(updateMessage);
+        });
+
+        socket.on('price_alert', function(data) {
+            const priorityIcon = {
+                'low': '🔵',
+                'normal': '🟡',
+                'high': '🟠',
+                'critical': '🔴'
+            }[data.priority] || '⚪';
+
+            addRealTimeUpdate(`${priorityIcon} Price Alert: ${data.message}`, 'warning');
+
+            // Refresh alerts and notifications
+            loadAlerts();
+            loadNotifications();
+            loadAlertStatistics();
+        });
+
+        // Auto-refresh data every 30 seconds
+        // Load autonomous agent status
+        // Debug logging for autonomous agent
+        function logAgentDebug(message) {
+            const debugLog = document.getElementById('agentDebugLog');
+            const debugContent = document.getElementById('agentDebugContent');
+
+            if (debugLog && debugContent) {
+                const timestamp = new Date().toLocaleTimeString();
+                debugContent.innerHTML += `[${timestamp}] ${message}<br>`;
+                debugContent.scrollTop = debugContent.scrollHeight;
+                debugLog.style.display = 'block';
+
+                // Keep only last 20 lines
+                const lines = debugContent.innerHTML.split('<br>');
+                if (lines.length > 20) {
+                    debugContent.innerHTML = lines.slice(-20).join('<br>');
+                }
+            }
+        }
+
+        async function loadAutonomousStatus() {
+            if (!systemInitialized) return;
+
+            try {
+                logAgentDebug('🔍 Checking autonomous status...');
+                const result = await apiCall('/api/autonomous_status');
+                logAgentDebug(`📡 API Response: status=${result.status}, message=${result.message || 'N/A'}`);
+
+                if (result.status) {
+                    updateAutonomousAgentStatus(
+                        result.status,
+                        result.recent_decisions ? result.recent_decisions.length : 0
+                    );
+                }
+            } catch (error) {
+                console.warn('Could not load autonomous agent status:', error);
+                logAgentDebug(`❌ API Error: ${error.message}`);
+                updateAutonomousAgentStatus('offline');
+            }
+        }
+
+        // Real-Time Market Prices Functions
+        const STOCK_CATEGORIES = {
+            mega_cap: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'BRK-B', 'TSLA', 'META', 'V', 'JNJ'],
+            large_cap_value: ['JPM', 'BAC', 'WMT', 'PG', 'KO', 'PEP', 'HD', 'UNH', 'CVX', 'XOM'],
+            growth_leaders: ['NVDA', 'AMD', 'PLTR', 'SNOW', 'NET', 'CRWD', 'ZS', 'OKTA', 'DDOG', 'MDB', 'CRM', 'NOW', 'WDAY', 'TEAM', 'ZM', 'DOCN', 'BILL', 'S', 'ESTC'],
+            mid_cap_gems: ['RBLX', 'PATH', 'DKNG', 'OPEN', 'ABNB', 'UBER', 'LYFT', 'DASH', 'COIN', 'HOOD', 'SQ', 'PYPL', 'SHOP', 'SPOT', 'TTD', 'ROKU', 'PINS', 'SNAP'],
+            small_cap_innovators: ['AI', 'SMCI', 'IONQ', 'BBAI', 'RGTI', 'QUBT', 'AVAV', 'KTOS', 'IRDM', 'MAXR', 'SPIR', 'ASTR', 'RKLB', 'LUNR', 'ASTS'],
+            biotech_emerging: ['MRNA', 'BNTX', 'NVAX', 'SGEN', 'BMRN', 'VRTX', 'ILMN', 'REGN', 'GILD', 'BIIB', 'AMGN', 'CELG', 'INCY', 'ALNY', 'RARE'],
+            fintech_disruptors: ['SQ', 'PYPL', 'HOOD', 'AFRM', 'SOFI', 'COIN', 'UPST', 'LC', 'NU', 'PAGS', 'STNE', 'MELI', 'SE'],
+            clean_energy: ['TSLA', 'ENPH', 'SEDG', 'RUN', 'SPWR', 'FSLR', 'PLUG', 'BE', 'NEE', 'BEP', 'AES', 'EIX', 'DUK'],
+            cybersecurity: ['CRWD', 'ZS', 'NET', 'OKTA', 'PANW', 'FTNT', 'S', 'RPD', 'CYBR', 'FEYE', 'VRNS', 'TENB', 'QLYS'],
+            robotics_ai: ['NVDA', 'AMD', 'AI', 'PLTR', 'PATH', 'SMCI', 'IONQ', 'GOOGL', 'MSFT', 'AVAV', 'KTOS', 'IRBT', 'ROK', 'ABB'],
+            international_growth: ['TSM', 'ASML', 'NVO', 'TM', 'SONY', 'SAP', 'SHOP', 'SE', 'MELI', 'BABA', 'JD', 'PDD', 'BIDU', 'NIO', 'XPEV', 'LI'],
+            value_growth_hybrid: ['BRK-B', 'MA', 'V', 'COST', 'LOW', 'TGT', 'WMT', 'DIS', 'NFLX', 'ADBE', 'CRM', 'NOW', 'INTU', 'ORCL', 'CSCO'],
+            space_economy: ['RKLB', 'ASTR', 'SPIR', 'LUNR', 'ASTS', 'MAXR', 'LMT', 'BA', 'RTX'],
+            quantum_computing: ['IONQ', 'RGTI', 'QUBT', 'IBM', 'GOOGL', 'MSFT', 'NVDA'],
+            gaming_metaverse: ['RBLX', 'U', 'EA', 'ATVI', 'TTWO', 'NVDA', 'AMD', 'META']
+        };
+
+        // Global flag to prevent overlapping price loading
+        let priceLoadingInProgress = false;
+
+        async function loadRealTimePrices() {
+            // Prevent overlapping calls
+            if (priceLoadingInProgress) {
+                console.log('Price loading already in progress, skipping...');
+                return;
+            }
+
+            try {
+                priceLoadingInProgress = true;
+                console.log('Starting loadRealTimePrices...');
+
+                // ABSOLUTE PRIORITY: Ensure scrolling is never blocked
+                document.body.style.overflow = 'auto';
+                document.body.classList.remove('modal-open');
+                const existingBackdrop = document.querySelector('.modal-backdrop');
+                if (existingBackdrop) {
+                    existingBackdrop.remove();
+                }
+
+                showPriceLoadingIndicator(true);
+                updateLoadingProgress('Testing scroll-friendly loading...', 10);
+
+                // REAL API MODE: Load data in very small batches to maintain scroll performance
+                console.log('SCROLL-FRIENDLY MODE: Loading real data in tiny batches');
+
+                const allPrices = {};
+                let currentBatch = 0;
+                let hasMore = true;
+
+                while (hasMore) {
+                    try {
+                        // Use very small batches (5 stocks) with longer delays for scroll responsiveness
+                        const result = await apiCall(`/api/real_time_prices?batch=${currentBatch}&batch_size=5`);
+
+                        if (result && result.prices) {
+                            // Merge batch data
+                            Object.assign(allPrices, result.prices);
+
+                            if (result.batch_info) {
+                                const progress = 10 + Math.floor((currentBatch + 1) / result.batch_info.total_batches * 70);
+                                updateLoadingProgress(
+                                    `Loading batch ${currentBatch + 1} of ${result.batch_info.total_batches} (${Object.keys(allPrices).length} stocks loaded)...`,
+                                    progress
+                                );
+                                hasMore = result.batch_info.has_more;
+                            } else {
+                                hasMore = false;
+                            }
+
+                            currentBatch++;
+
+                            // Longer delay between batches to ensure scroll stays responsive
+                            if (hasMore) {
+                                await new Promise(resolve => setTimeout(resolve, 200));
+                            }
+                        } else {
+                            console.warn('No price data in batch:', result);
+                            hasMore = false;
+                        }
+                    } catch (batchError) {
+                        console.error(`Error loading batch ${currentBatch}:`, batchError);
+                        // Continue with next batch even if one fails
+                        currentBatch++;
+                        if (currentBatch >= 20) { // Safety limit
+                            hasMore = false;
+                        }
+                    }
+                }
+
+                // Process the data we managed to collect
+                if (Object.keys(allPrices).length > 0) {
+                    updateLoadingProgress(`Processing ${Object.keys(allPrices).length} stocks across 15 sectors...`, 85);
+
+                    // Process data immediately with no extra delays
+                    displayStocksByCategory(allPrices);
+                    updateMarketOverview(allPrices);
+                    updatePriceUpdateTime();
+
+                    updateLoadingProgress('All available stocks loaded successfully!', 100);
+                } else {
+                    console.warn('No price data received from any batch - using fallback display');
+                    showPriceLoadingError();
+                }
+
+                setTimeout(() => {
+                    showPriceLoadingIndicator(false);
+                }, 500);
+
+            } catch (error) {
+                console.error('Failed to load real-time prices:', error);
+                showPriceLoadingError();
+                showPriceLoadingIndicator(false);
+            } finally {
+                priceLoadingInProgress = false;
+                console.log('Finished loadRealTimePrices');
+            }
+        }
+
+        function displayStocksByCategory(pricesData) {
+            // Handle both object and array formats asynchronously
+            let pricesObject;
+
+            if (Array.isArray(pricesData)) {
+                // Convert array to object asynchronously in batches to prevent blocking
+                pricesObject = {};
+                let arrayIndex = 0;
+
+                function convertArrayBatch() {
+                    const batchSize = 20; // Process 20 stocks at a time
+                    const endIndex = Math.min(arrayIndex + batchSize, pricesData.length);
+
+                    for (let i = arrayIndex; i < endIndex; i++) {
+                        const stock = pricesData[i];
+                        if (stock && stock.symbol) {
+                            pricesObject[stock.symbol] = stock;
+                        }
+                    }
+
+                    arrayIndex = endIndex;
+
+                    if (arrayIndex < pricesData.length) {
+                        // Continue converting next batch
+                        setTimeout(() => {
+                            requestAnimationFrame(convertArrayBatch);
+                        }, 5);
+                    } else {
+                        // Conversion complete, start category processing
+                        setTimeout(() => {
+                            startCategoryProcessing(pricesObject);
+                        }, 50);
+                    }
+                }
+
+                // Start array conversion
+                setTimeout(() => {
+                    requestAnimationFrame(convertArrayBatch);
+                }, 50);
+                return; // Early return, processing continues in convertArrayBatch
+            } else {
+                pricesObject = pricesData;
+                // Start category processing immediately for object format
+                setTimeout(() => {
+                    startCategoryProcessing(pricesObject);
+                }, 50);
+                return;
+            }
+        }
+
+        function startCategoryProcessing(pricesObject) {
+            // ULTRA SIMPLE approach - just set a flag that allows immediate scrolling
+            console.log('Starting category processing with maximum scroll priority');
+
+            // Absolutely ensure scrolling is enabled
+            document.body.style.overflow = '';
+            document.body.classList.remove('modal-open');
+
+            const categories = Object.keys(STOCK_CATEGORIES);
+            let categoryIndex = 0;
+
+            function processOneCategory() {
+                if (categoryIndex >= categories.length) {
+                    console.log('Category processing complete');
+                    return;
+                }
+
+                const category = categories[categoryIndex];
+                const container = document.getElementById(`${category}_stocks`);
+
+                if (container) {
+                    const categoryStocks = STOCK_CATEGORIES[category];
+                    const stockItems = [];
+
+                    // Build HTML
+                    categoryStocks.forEach(symbol => {
+                        const stockData = pricesObject[symbol];
+                        if (stockData) {
+                            const changePercent = stockData.change_percent || stockData.change || 0;
+                            const changeClass = changePercent >= 0 ? 'positive' : 'negative';
+                            const changePrefix = changePercent >= 0 ? '+' : '';
+                            const formattedPrice = typeof stockData.price === 'number' ? stockData.price.toFixed(2) : stockData.price;
+                            const formattedChange = typeof changePercent === 'number' ? changePercent.toFixed(2) : changePercent;
+
+                            stockItems.push(`
+                                <div class="stock-item ${changeClass}" title="${stockData.symbol} - ${stockData.sector || 'N/A'}">
+                                    <div class="stock-symbol">${stockData.symbol}</div>
+                                    <div class="stock-details">
+                                        <div class="stock-price">$${formattedPrice}</div>
+                                        <div class="stock-change ${changeClass}">
+                                            ${changePrefix}${formattedChange}%
+                                        </div>
+                                        ${stockData.rsi ? `<div class="stock-rsi">RSI: ${stockData.rsi}</div>` : ''}
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    });
+
+                    // Immediate DOM update - no fancy async stuff
+                    container.innerHTML = stockItems.length > 0 ? stockItems.join('') : '<div class="text-muted small">No data available</div>';
+
+                    // Update progress
+                    const progressPercent = 50 + Math.floor((categoryIndex / categories.length) * 45);
+                    updateLoadingProgress(`Loading sector ${categoryIndex + 1} of ${categories.length}...`, progressPercent);
+                }
+
+                categoryIndex++;
+
+                // Continue with minimal delay - prioritize speed over everything
+                if (categoryIndex < categories.length) {
+                    setTimeout(processOneCategory, 10); // Very short delay
+                }
+            }
+
+            // Start immediately
+            processOneCategory();
+        }
+
+        function updateMarketOverview(pricesData) {
+            // Process data in small batches to prevent blocking
+            const stocksArray = Array.isArray(pricesData) ? pricesData : Object.values(pricesData);
+            let marketsUp = 0, marketsDown = 0, marketsFlat = 0;
+            let totalRsi = 0, rsiCount = 0;
+            let processedIndex = 0;
+
+            function processBatch() {
+                const batchSize = 10; // Process only 10 stocks at a time
+                const endIndex = Math.min(processedIndex + batchSize, stocksArray.length);
+
+                // Process this batch
+                for (let i = processedIndex; i < endIndex; i++) {
+                    const stock = stocksArray[i];
+                    const changePercent = stock.change_percent || stock.change || 0;
+                    if (changePercent > 0.1) marketsUp++;
+                    else if (changePercent < -0.1) marketsDown++;
+                    else marketsFlat++;
+
+                    if (stock.rsi && !isNaN(stock.rsi)) {
+                        totalRsi += parseFloat(stock.rsi);
+                        rsiCount++;
+                    }
+                }
+
+                processedIndex = endIndex;
+
+                // If finished processing, update DOM
+                if (processedIndex >= stocksArray.length) {
+                    requestAnimationFrame(() => {
+                        document.getElementById('marketsUp').textContent = marketsUp;
+                        document.getElementById('marketsDown').textContent = marketsDown;
+                        document.getElementById('marketsFlat').textContent = marketsFlat;
+
+                        if (rsiCount > 0) {
+                            const avgRsi = (totalRsi / rsiCount).toFixed(1);
+                            document.getElementById('avgRsi').textContent = avgRsi;
+                        } else {
+                            document.getElementById('avgRsi').textContent = 'N/A';
+                        }
+                    });
+                } else {
+                    // Continue processing next batch with delay
+                    setTimeout(() => {
+                        requestAnimationFrame(processBatch);
+                    }, 10);
+                }
+            }
+
+            // Start batch processing with initial delay
+            setTimeout(() => {
+                requestAnimationFrame(processBatch);
+            }, 100);
+        }
+
+        function updatePriceUpdateTime() {
+            requestAnimationFrame(() => {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                document.getElementById('priceUpdateTime').textContent = `Last updated: ${timeString}`;
+            });
+        }
+
+        function showPriceLoadingError() {
+            requestAnimationFrame(() => {
+                Object.keys(STOCK_CATEGORIES).forEach(category => {
+                    const container = document.getElementById(`${category}_stocks`);
+                    if (container) {
+                        container.innerHTML = '<div class="text-muted text-center">⚠️ Loading error</div>';
+                    }
+                });
+            });
+        }
+
+        function showPriceLoadingIndicator(show) {
+            // Use requestAnimationFrame to prevent blocking scroll
+            requestAnimationFrame(() => {
+                const indicator = document.getElementById('pricesLoadingIndicator');
+                if (indicator) {
+                    indicator.style.display = show ? 'block' : 'none';
+                }
+            });
+        }
+
+        function updateLoadingProgress(message, percent) {
+            // Use requestAnimationFrame to prevent blocking scroll
+            requestAnimationFrame(() => {
+                const progressText = document.getElementById('loadingProgress');
+                const progressBar = document.getElementById('loadingProgressBar');
+
+                if (progressText) {
+                    progressText.textContent = message;
+                }
+
+                if (progressBar) {
+                    progressBar.style.width = `${percent}%`;
+                    progressBar.setAttribute('aria-valuenow', percent);
+                }
+            });
+        }
+
+        // Refresh prices button handler
+        function setupPriceRefreshButton() {
+            const refreshBtn = document.getElementById('refreshPricesBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async () => {
+                    await loadRealTimePrices();
+                });
+            }
+        }
+
+        // Non-blocking periodic updates with proper staggered loading
+        setInterval(async () => {
+            if (!systemInitialized) return;
+
+            // Stagger the API calls to prevent blocking the main thread
+            const updateFunctions = [
+                loadSystemStatus,
+                loadPortfolioData,
+                loadProposals,
+                loadPerformanceData,
+                loadComplianceData,
+                loadAlerts,
+                loadAlertStatistics,
+                loadNotifications,
+                loadRealTimePrices,
+                loadAutonomousStatus
+            ];
+
+            // Execute API calls with proper async delays to prevent blocking
+            async function executeStaggered() {
+                for (let i = 0; i < updateFunctions.length; i++) {
+                    // Use setTimeout with Promise to ensure non-blocking execution
+                    setTimeout(async () => {
+                        try {
+                            await updateFunctions[i]();
+                        } catch (error) {
+                            console.warn(`Update function ${updateFunctions[i].name} failed:`, error);
+                        }
+                    }, i * 200); // Increased to 200ms delay between each API call
+                }
+            }
+
+            // Run staggered execution without blocking
+            requestAnimationFrame(executeStaggered);
+        }, 30000);
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+            loadSystemStatus();
+            addRealTimeUpdate('Dashboard loaded');
+            setupPriceRefreshButton();
+
+            // Fix modal accessibility - manage aria-hidden dynamically
+            const loadingModal = document.getElementById('loadingModal');
+            loadingModal.addEventListener('show.bs.modal', () => {
+                loadingModal.removeAttribute('aria-hidden');
+            });
+            loadingModal.addEventListener('hidden.bs.modal', () => {
+                loadingModal.setAttribute('aria-hidden', 'true');
+            });
+
+            // Portfolio chart period buttons
+            document.querySelectorAll('[data-period]').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    // Remove active class from all buttons
+                    document.querySelectorAll('[data-period]').forEach(b => b.classList.remove('active'));
+                    // Add active class to clicked button
+                    e.target.classList.add('active');
+                    // Load chart with new period
+                    const period = e.target.getAttribute('data-period');
+                    await loadPortfolioChart(period);
+                });
+            });
+        });
+
+        // Price Alerts Functions
+        async function loadAlerts() {
+            if (!systemInitialized) return;
+
+            const result = await apiCall('/api/alerts?status=active');
+            const alertsList = document.getElementById('alertsList');
+
+            if (result.alerts && result.alerts.length > 0) {
+                alertsList.innerHTML = '';
+                result.alerts.forEach(alert => {
+                    const statusIcon = {
+                        'active': '🟢',
+                        'triggered': '🔴',
+                        'paused': '🟡',
+                        'expired': '⚫'
+                    }[alert.status] || '❓';
+
+                    const alertCard = document.createElement('div');
+                    alertCard.className = 'alert-item mb-3 p-3 border rounded';
+                    alertCard.innerHTML = `
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center">
+                                    <span class="me-2">${statusIcon}</span>
+                                    <div>
+                                        <strong>${alert.symbol} ${alert.alert_type.replace('_', ' ')}</strong>
+                                        <div class="text-muted small">${alert.message}</div>
+                                        <div class="small">
+                                            Target: ${alert.condition_value}
+                                            ${alert.current_value ? `| Current: ${alert.current_value}` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="btn-group btn-group-sm">
+                                    ${alert.status === 'active' ?
+                                        `<button class="btn btn-outline-warning" onclick="pauseAlert('${alert.id}')">
+                                            <i class="fas fa-pause"></i>
+                                        </button>` :
+                                        `<button class="btn btn-outline-success" onclick="resumeAlert('${alert.id}')">
+                                            <i class="fas fa-play"></i>
+                                        </button>`
+                                    }
+                                    <button class="btn btn-outline-danger" onclick="deleteAlert('${alert.id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    alertsList.appendChild(alertCard);
+                });
+            } else {
+                alertsList.innerHTML = '<div class="text-center text-muted">No active alerts</div>';
+            }
+        }
+
+        async function loadAlertStatistics() {
+            if (!systemInitialized) return;
+
+            const result = await apiCall('/api/alerts/statistics');
+            if (result) {
+                document.getElementById('totalAlertsCount').textContent = result.total_alerts || 0;
+                document.getElementById('activeAlertsCount').textContent = result.active_alerts || 0;
+
+                const monitoringStatus = document.getElementById('monitoringStatus');
+                if (result.monitoring_active) {
+                    monitoringStatus.className = 'alert alert-success';
+                    monitoringStatus.innerHTML = '<i class="fas fa-check-circle"></i> Monitoring active (every 30 seconds)';
+                } else {
+                    monitoringStatus.className = 'alert alert-warning';
+                    monitoringStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Monitoring inactive';
+                }
+            }
+        }
+
+        async function loadNotifications() {
+            if (!systemInitialized) return;
+
+            const result = await apiCall('/api/alerts/notifications?limit=10');
+            const notificationsList = document.getElementById('notificationsList');
+
+            if (result.notifications && result.notifications.length > 0) {
+                notificationsList.innerHTML = '';
+                result.notifications.forEach(notification => {
+                    const priorityIcon = {
+                        'low': '🔵',
+                        'normal': '🟡',
+                        'high': '🟠',
+                        'critical': '🔴'
+                    }[notification.priority] || '⚪';
+
+                    const notificationItem = document.createElement('div');
+                    notificationItem.className = 'notification-item mb-2 p-2 border-start border-3 border-primary';
+                    notificationItem.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">${priorityIcon}</span>
+                            <div>
+                                <div class="fw-bold">${notification.symbol}</div>
+                                <div class="small text-muted">${notification.message}</div>
+                                <div class="small text-secondary">
+                                    ${new Date(notification.timestamp).toLocaleTimeString()} -
+                                    Current: ${notification.current_value} | Target: ${notification.target_value}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    notificationsList.appendChild(notificationItem);
+                });
+            } else {
+                notificationsList.innerHTML = '<div class="text-center text-muted">No recent notifications</div>';
+            }
+        }
+
+        async function createAlert() {
+            const symbol = document.getElementById('alertSymbol').value.trim().toUpperCase();
+            const alertType = document.getElementById('alertType').value;
+            const alertValue = parseFloat(document.getElementById('alertValue').value);
+            const message = document.getElementById('alertMessage').value.trim();
+            const expiry = document.getElementById('alertExpiry').value;
+
+            if (!symbol || !alertType || isNaN(alertValue)) {
+                addRealTimeUpdate('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const alertData = {
+                symbol: symbol,
+                alert_type: alertType,
+                condition_value: alertValue,
+                message: message,
+                notify_channels: ['web']
+            };
+
+            if (expiry) {
+                alertData.expires_in_hours = parseInt(expiry);
+            }
+
+            const result = await apiCall('/api/alerts', {
+                method: 'POST',
+                body: JSON.stringify(alertData)
+            });
+
+            if (result.status === 'success') {
+                addRealTimeUpdate(`Alert created for ${symbol}`, 'success');
+                document.getElementById('createAlertForm').reset();
+                await loadAlerts();
+                await loadAlertStatistics();
+            } else {
+                addRealTimeUpdate(`Failed to create alert: ${result.error}`, 'error');
+            }
+        }
+
+        async function createSmartAlerts() {
+            const symbol = 'AAPL'; // Default for now
+
+            const result = await apiCall(`/api/alerts/smart/${symbol}`, {
+                method: 'POST'
+            });
+
+            if (result.status === 'success') {
+                addRealTimeUpdate(result.message, 'success');
+                await loadAlerts();
+                await loadAlertStatistics();
+            } else {
+                addRealTimeUpdate(`Failed to create smart alerts: ${result.error}`, 'error');
+            }
+        }
+
+        async function pauseAlert(alertId) {
+            const result = await apiCall(`/api/alerts/${alertId}/pause`, {
+                method: 'POST'
+            });
+
+            if (result.status === 'success') {
+                addRealTimeUpdate('Alert paused', 'success');
+                await loadAlerts();
+            } else {
+                addRealTimeUpdate(`Failed to pause alert: ${result.error}`, 'error');
+            }
+        }
+
+        async function resumeAlert(alertId) {
+            const result = await apiCall(`/api/alerts/${alertId}/resume`, {
+                method: 'POST'
+            });
+
+            if (result.status === 'success') {
+                addRealTimeUpdate('Alert resumed', 'success');
+                await loadAlerts();
+            } else {
+                addRealTimeUpdate(`Failed to resume alert: ${result.error}`, 'error');
+            }
+        }
+
+        async function deleteAlert(alertId) {
+            if (!confirm('Are you sure you want to delete this alert?')) {
+                return;
+            }
+
+            const result = await apiCall(`/api/alerts/${alertId}`, {
+                method: 'DELETE'
+            });
+
+            if (result.status === 'success') {
+                addRealTimeUpdate('Alert deleted', 'success');
+                await loadAlerts();
+                await loadAlertStatistics();
+            } else {
+                addRealTimeUpdate(`Failed to delete alert: ${result.error}`, 'error');
+            }
+        }
+
+
+        // Make functions global for onclick handlers
+        window.approveProposal = approveProposal;
+        window.rejectProposal = rejectProposal;
+        window.pauseAlert = pauseAlert;
+        window.resumeAlert = resumeAlert;
+        window.deleteAlert = deleteAlert;
+    </script>
+</body>
+</html>

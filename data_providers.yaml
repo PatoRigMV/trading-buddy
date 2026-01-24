@@ -1,0 +1,194 @@
+# Professional Trading Terminal Data Provider Configuration
+# Domain-specific hierarchy with execution-grade reliability
+
+data_providers:
+  # 1) INTRADAY PRICES & QUOTES (execution-grade)
+  prices:
+    primary: polygon_ws          # WebSocket for trades/quotes + LULD, ultra-broad US coverage
+    secondary: tiingo_iex        # Real-time IEX prints via Tiingo, reliable intraday from lit venue
+    tertiary: finnhub_rest       # REST/minute bars + quotes, generous limits on paid tiers
+    quaternary: twelve_data_rapidapi  # Easy plug-in for global symbols, "just-works" REST
+    fallback: fmp_rapidapi       # Financial Modeling Prep via RapidAPI
+    last_resort: yahoo_finance   # Undocumented throttling, keep at bottom
+
+    validation:
+      max_mid_deviation_bps: 5   # Cross-provider mid price within 5 bps
+      max_price_discrepancy_pct: 0.3  # Tightened from 0.5% for intraday
+      freshness_ms:
+        quotes: 2000             # Real-time quotes stale after 2s
+        bars_1m: 60000           # 1-min bars stale after 60s
+        bars_5m: 300000          # 5-min bars stale after 5m
+
+  # 2) CORPORATE ACTIONS (splits/dividends/halts)
+  corporate_actions:
+    primary: polygon             # Halts, LULD, corporate actions
+    secondary: fmp_rapidapi      # FMP for confirmation
+    tertiary: tiingo             # Additional cross-check
+    validation:
+      require_confirmation: true # Need 2+ sources for corporate actions
+
+  # 3) FUNDAMENTALS & REFERENCE
+  fundamentals:
+    primary: ycharts             # Cleaned fundamentals, macro series, ratios (SOT)
+    secondary: fmp_rapidapi      # Broad statements, factors, ETF holdings, PIT enrichment
+    tertiary: tiingo_fundamentals # US fundamentals cross-check
+    quaternary: alpha_vantage    # Demoted from intraday, kept for archival/fundamentals
+    fallback: yahoo_finance      # Basic fundamentals fallback
+
+    validation:
+      staleness_days: 90         # Fundamental data valid for 90 days
+      cross_check_key_ratios: true # Validate PE, PB, ROE across sources
+
+  # 4) NEWS (latency matters for trading)
+  news:
+    primary: benzinga           # Battle-tested for trading, low latency (if budget allows)
+    secondary: tiingo_news      # Multi-source, deep history, sentiment workflows
+    tertiary: newsapi           # Broad aggregator, slower/less curated
+    fallback: yahoo_finance     # Basic news fallback
+
+    validation:
+      max_age_minutes: 60       # News stale after 1 hour for trading decisions
+      require_source_attribution: true
+
+  # 5) SENTIMENT & SOCIAL
+  sentiment:
+    primary: tiingo_news_nlp    # Tiingo News + in-house NLP (headline/body polarity)
+    secondary: stocktwits_reddit # Retail flow sentiment
+    tertiary: newsapi_sentiment # NewsAPI with sentiment analysis
+
+    validation:
+      sentiment_confidence_threshold: 0.6
+      min_article_count: 3      # Need 3+ articles for sentiment consensus
+
+  # 6) MACRO & YIELDS
+  macro:
+    primary: ycharts            # Timeseries blends (spreads, rates, PMI, unemployment)
+    secondary: fred_public      # Federal Reserve Economic Data (public REST)
+    fallback: yahoo_finance     # Basic macro indicators
+
+    validation:
+      staleness_hours: 24       # Macro data valid for 24 hours
+
+# ORCHESTRATION & VALIDATION RULES
+fallbacks:
+  cache_ttl_seconds:
+    quotes: 2                   # Ultra-fresh for execution
+    bars_1m: 30                # 30s cache for 1-min bars
+    bars_5m: 150               # 2.5min cache for 5-min bars
+    fundamentals: 3600         # 1 hour cache for fundamentals
+    news: 300                  # 5 min cache for news
+    macro: 1800                # 30 min cache for macro
+
+  quorum:
+    min_agreeing_sources: 2     # Need 2+ sources to agree
+    price_agreement_bps: 5      # Sources must agree within 5 bps
+    fundamental_agreement_pct: 10 # Fundamentals within 10%
+
+  circuit_breaker:
+    max_consecutive_failures: 3  # Circuit break after 3 failures
+    backoff_seconds: [5, 15, 60] # Exponential backoff
+
+# RATE LIMITS (provider-specific leaky buckets)
+rate_limits:
+  polygon_ws:
+    strategy: "ws_stream"       # WebSocket streaming, no REST limits
+    connection_limit: 1         # Single WS connection
+
+  polygon_rest:
+    rpm: 300                    # 300 requests per minute (paid tier)
+    burst: 10                   # Allow 10 burst requests
+
+  tiingo_iex:
+    rpm: 1000                   # 1000 requests per minute
+    burst: 50
+
+  tiingo_news:
+    rpm: 500
+    burst: 20
+
+  finnhub_rest:
+    rpm: 150                    # 150 requests per minute (paid tier)
+    burst: 10
+
+  twelve_data_rapidapi:
+    rpm: 60                     # RapidAPI limits
+    burst: 5
+
+  fmp_rapidapi:
+    rpm: 60
+    burst: 5
+
+  ycharts:
+    rpm: 100                    # Conservative for YCharts
+    burst: 10
+
+  alpha_vantage:
+    rpm: 75                     # 75 calls/minute paid tier
+    burst: 5
+
+  benzinga:
+    rpm: 200                    # News feed limits
+    burst: 20
+
+  newsapi:
+    daily_limit: 1000           # Daily limit management
+    rpm: 60
+
+  yahoo_finance:
+    rpm: 100                    # Conservative, undocumented limits
+    burst: 10
+    backoff_on_429: true        # Respect 429 responses
+
+# EXECUTION GUARDS (trading safety)
+execution_guards:
+  respect_luld: true            # Honor Limit Up-Limit Down events
+  block_on_halt: true           # Block orders during trading halts
+  max_spread_bps: 50            # Don't trade if spread > 50 bps
+  min_volume_threshold: 1000    # Minimum daily volume for trades
+
+  earnings_blackout:
+    enabled: true
+    window_days: 3              # Block ±3 days around earnings
+
+  market_hours:
+    respect_extended_hours: true
+    block_pre_market_first_15min: true  # Avoid pre-market first 15min volatility
+    block_after_market_last_15min: true # Avoid after-market last 15min
+
+# WEBSOCKET CONFIGURATION
+websockets:
+  polygon:
+    endpoint: "wss://socket.polygon.io/stocks"
+    reconnect_attempts: 5
+    heartbeat_interval: 30
+    buffer_size: 10000
+
+  tiingo:
+    endpoint: "wss://api.tiingo.com/iex"
+    reconnect_attempts: 3
+    heartbeat_interval: 20
+
+# API CREDENTIALS MAPPING (all keys loaded from environment variables)
+credentials:
+  polygon_key: "${POLYGON_API_KEY}"
+  tiingo_token: "${TIINGO_API_TOKEN}"
+  finnhub_key: "${FINNHUB_API_KEY}"
+  twelve_data_rapidapi_key: "${RAPIDAPI_KEY}"
+  fmp_rapidapi_key: "${RAPIDAPI_KEY}"
+  ycharts_key: "${YCHARTS_API_KEY}"
+  alpha_vantage_key: "${ALPHA_VANTAGE_KEY}"
+  benzinga_key: "${BENZINGA_API_KEY}"
+  newsapi_key: "${NEWSAPI_KEY}"
+  stocktwits_rapidapi_key: "${RAPIDAPI_KEY}"
+
+# MONITORING & ALERTING
+monitoring:
+  track_api_latency: true
+  track_error_rates: true
+  alert_on_circuit_breaker: true
+  log_validation_failures: true
+
+  performance_thresholds:
+    max_quote_latency_ms: 100   # Alert if quotes take >100ms
+    max_api_error_rate: 0.05    # Alert if >5% error rate
+    min_data_freshness_pct: 0.9 # Alert if <90% fresh data
