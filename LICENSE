@@ -22,21 +22,54 @@ SOFTWARE.
 
 ---
 
-DISCLAIMER
+IMPORTANT DISCLAIMER - PLEASE READ CAREFULLY
 
-This software is provided for educational and research purposes only. It is
-not intended to be used as financial advice. Trading in financial instruments
-involves substantial risk of loss and is not suitable for all investors.
+This software is provided for EDUCATIONAL AND RESEARCH PURPOSES ONLY.
 
-The authors and contributors of this software:
-- Do not guarantee any specific results or profits
-- Are not responsible for any financial losses incurred
-- Do not provide investment advice or recommendations
-- Make no warranties about the accuracy of data or calculations
+1. NOT FINANCIAL ADVICE
 
-Past performance does not guarantee future results. Always do your own
-research and consult with a qualified financial advisor before making any
-investment decisions.
+This software does NOT provide financial, investment, tax, or legal advice.
+No content, signals, alerts, or outputs from this software should be construed
+as a recommendation to buy, sell, or hold any security. The developers are not
+registered investment advisors, broker-dealers, or financial planners.
 
-By using this software, you acknowledge that you understand and accept these
-risks and limitations.
+2. RISK WARNING
+
+Trading in stocks, options, and other financial instruments involves
+SUBSTANTIAL RISK OF LOSS. You may lose some or ALL of your invested capital.
+Past performance, including backtests and paper trading results, does NOT
+guarantee future results. Hypothetical or simulated performance results have
+inherent limitations and biases.
+
+3. NO WARRANTIES
+
+This software is provided "as is" without warranty of any kind, express or
+implied. The developers make NO GUARANTEES about the accuracy, reliability,
+completeness, or timeliness of any data or calculations. The developers are
+not responsible for any errors, bugs, malfunctions, or API failures.
+
+4. LIMITATION OF LIABILITY
+
+Under NO CIRCUMSTANCES shall the authors, contributors, or copyright holders
+be liable for any direct, indirect, incidental, special, exemplary, or
+consequential damages. This includes, but is not limited to: loss of profits,
+loss of data, loss of business opportunities, or trading losses arising from
+the use of this software.
+
+5. YOUR RESPONSIBILITIES
+
+- Always do your own research (DYOR) before making investment decisions
+- Consult with a qualified financial advisor before investing real money
+- Test all strategies extensively in paper trading before using real capital
+- Understand that algorithmic trading can result in rapid, significant losses
+- Ensure compliance with all applicable laws and regulations in your jurisdiction
+- Monitor your positions and do not rely solely on automated systems
+
+6. ACKNOWLEDGMENT
+
+By downloading, installing, or using this software in any way, you acknowledge
+that you have read, understood, and agree to be bound by this disclaimer. You
+accept FULL RESPONSIBILITY for any trading decisions made using this software
+and agree not to hold the developers liable for any financial losses.
+
+If you do not agree with these terms, do not use this software.

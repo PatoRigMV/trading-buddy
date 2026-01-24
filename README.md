@@ -304,14 +304,41 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ## Disclaimer
 
-**This software is for educational and research purposes only.**
+**This software is provided for educational and research purposes only.**
 
-- This is not financial advice
-- Trading involves substantial risk of loss
-- Past performance does not guarantee future results
-- Always do your own research (DYOR)
-- Consult a qualified financial advisor before investing real money
-- The authors are not responsible for any financial losses
+### Not Financial Advice
+- This software does NOT provide financial, investment, tax, or legal advice
+- No content, signals, alerts, or outputs from this software should be construed as a recommendation to buy, sell, or hold any security
+- The developers are not registered investment advisors, broker-dealers, or financial planners
+
+### Risk Warning
+- Trading in stocks, options, and other financial instruments involves substantial risk of loss
+- You may lose some or all of your invested capital
+- Past performance, including backtests and paper trading results, does NOT guarantee future results
+- Hypothetical or simulated performance results have inherent limitations and biases
+
+### No Warranties
+- This software is provided "as is" without warranty of any kind, express or implied
+- The developers make no guarantees about the accuracy, reliability, completeness, or timeliness of data
+- The developers are not responsible for any errors, bugs, or malfunctions in the software
+- API integrations may fail, provide incorrect data, or experience outages
+
+### Limitation of Liability
+- Under no circumstances shall the authors, contributors, or copyright holders be liable for any direct, indirect, incidental, special, exemplary, or consequential damages
+- This includes, but is not limited to: loss of profits, data, business opportunities, or trading losses
+- Use of this software is entirely at your own risk
+
+### Your Responsibilities
+- Always do your own research (DYOR) before making any investment decisions
+- Consult with a qualified financial advisor, tax professional, or attorney before investing real money
+- Thoroughly test any strategies in paper trading before using real capital
+- Understand that algorithmic trading can result in rapid and significant losses
+- Ensure compliance with all applicable laws and regulations in your jurisdiction
+
+### By Using This Software, You Acknowledge:
+- You have read and understood this disclaimer
+- You accept full responsibility for any trading decisions made using this software
+- You will not hold the developers liable for any financial losses
 
 ---
 
@@ -322,5 +349,7 @@ MIT License - See [LICENSE](LICENSE) for details.
 - [YCharts](https://ycharts.com) - Professional financial analytics
 
 ---
+
+See more AI experiments at [heyhaigh.ai](https://heyhaigh.ai)
 
 Built with care by [@heyhaigh](https://github.com/heyhaigh)
