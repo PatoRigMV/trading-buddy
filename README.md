@@ -129,6 +129,7 @@ Visit `http://localhost:8000` in your browser.
 
 | Document | Description |
 |----------|-------------|
+| **[Welcome Guide](WELCOME.md)** | The full story—architecture, decisions, and lessons learned |
 | **[Getting Started](docs/GETTING_STARTED.md)** | Step-by-step setup guide |
 | **[Architecture](docs/ARCHITECTURE.md)** | System design, data flow, component interactions |
 | **[Agents Guide](docs/AGENTS.md)** | All specialized agents, their roles, and how they coordinate |

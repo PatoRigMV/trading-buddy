@@ -1,6 +1,6 @@
-# FORRYAN.md - The Complete Trading Buddy Story
+# Welcome to Trading Buddy
 
-*A conversational deep-dive into everything you need to know about this project, written for future-you who will inevitably forget the details.*
+*A conversational deep-dive into everything you need to know about this project—the architecture, the decisions, the lessons learned, and how it all fits together.*
 
 ---
 
@@ -460,9 +460,9 @@ We wrote documentation at multiple levels:
 2. **docs/GETTING_STARTED.md** - "How do I actually set this up?" (30 minutes)
 3. **docs/ARCHITECTURE.md** - "How does it work under the hood?" (1 hour)
 4. **Code comments** - "Why did we do it THIS way?"
-5. **FORRYAN.md** (this file) - "Everything I need to know" (1+ hour)
+5. **WELCOME.md** (this file) - "The full story" (1+ hour)
 
-Each serves a different purpose. A new developer should read them in order 1 → 2 → 3 → 4. You (Ryan) should read 5 when you need to remember why things are the way they are.
+Each serves a different purpose. New developers should read them in order 1 → 2 → 3 → 4. Read this file (5) when you want to understand the deeper reasoning behind decisions.
 
 ---
 
