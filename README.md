@@ -1,8 +1,35 @@
 # Trading Buddy
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 An open-source autonomous trading platform with multi-agent architecture, intelligent data aggregation, and comprehensive risk management.
 
 Built for developers who want to create their own algorithmic trading systems.
+
+---
+
+## 5-Minute Quick Start
+
+```bash
+# Clone the repo
+git clone https://github.com/heyhaigh/trading-buddy.git
+cd trading-buddy
+
+# Run automated setup (creates venv, installs deps, generates secret key)
+make setup
+
+# Add your API keys to .env (at minimum: Alpaca + one data provider)
+nano .env
+
+# Start the application
+make run
+
+# Open http://localhost:8000 in your browser
+```
+
+Need help? See [Troubleshooting](docs/TROUBLESHOOTING.md) or run `make check-env`.
 
 ---
 
@@ -102,11 +129,24 @@ Visit `http://localhost:8000` in your browser.
 
 | Document | Description |
 |----------|-------------|
+| **[Getting Started](docs/GETTING_STARTED.md)** | Step-by-step setup guide |
 | **[Architecture](docs/ARCHITECTURE.md)** | System design, data flow, component interactions |
 | **[Agents Guide](docs/AGENTS.md)** | All specialized agents, their roles, and how they coordinate |
 | **[API Integrations](docs/API_INTEGRATIONS.md)** | Data providers, configuration, and rate limits |
 | **[Risk Management](docs/RISK_MANAGEMENT.md)** | Safety features, circuit breakers, position controls |
-| **[Getting Started](docs/GETTING_STARTED.md)** | Step-by-step setup guide |
+| **[Troubleshooting](docs/TROUBLESHOOTING.md)** | Common issues and solutions |
+
+### Examples
+
+Ready-to-run code examples in the [`examples/`](examples/) folder:
+
+| Example | Description |
+|---------|-------------|
+| [basic_trade.py](examples/basic_trade.py) | Place a paper trade via the API |
+| [fetch_quotes.py](examples/fetch_quotes.py) | Fetch quotes from multiple providers |
+| [custom_indicator.py](examples/custom_indicator.py) | Add a custom technical indicator |
+| [custom_agent.py](examples/custom_agent.py) | Create a new specialized agent |
+| [webhook_alerts.py](examples/webhook_alerts.py) | Set up price alerts with webhooks |
 
 ---
 
